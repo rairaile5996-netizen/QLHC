@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>PDVT mockup v2</title>
+<style>
+/* Palette = DocumentManagement/Styles/SharedStyles.xaml (Blueprint light) */
+:root{
+  --surface:#EAF0F6; --container:#F7FAFC; --bright:#E1E8F0; --high:#D7E1EC;
+  --on:#172033; --onv:#4B5F78; --outline:#BAC7D6; --primary:#2563EB; --sel:#D7E7FB;
+  --ok:#10B981; --okbg:#DDF5EC; --okfg:#047857;
+  --warn:#D97706; --warnbg:#FDF0D9; --warnfg:#B45309;
+  --err:#DC2626; --errbg:#FBE2E2; --errfg:#B91C1C;
+  --info:#2563EB; --infobg:#DCE8FC; --infofg:#1D4ED8;
+  --gray:#E3E8EF; --grayfg:#4B5F78;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Noto Sans","DejaVu Sans",Arial,sans-serif;color:var(--on);background:#9aa6b4;font-size:13px}
+.frame{width:1600px;height:960px;background:var(--surface);display:flex;flex-direction:column;position:relative;overflow:hidden;margin-bottom:40px}
+body:has(.frame:target){background:var(--surface)}
+body:has(.frame:target) .cap,body:has(.frame:target) .frame:not(:target){display:none}
+body:has(.frame:target) .frame{margin:0}
+.cap{width:1600px;padding:10px 4px;font-size:15px;font-weight:700;color:#fff}
+
+/* header */
+.hdr{height:64px;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid var(--outline);background:var(--surface);gap:16px}
+.hdr h1{font-size:18px;font-weight:800}
+.hdr .ctx{color:var(--onv);font-size:12px}
+.cov{display:flex;gap:6px;margin-left:12px}
+.chip{border:1px solid var(--outline);background:var(--container);border-radius:14px;padding:4px 10px;font-size:12px;color:var(--onv)}
+.chip b{color:var(--on)}
+.chip.warn b{color:var(--warnfg)}
+.sp{flex:1}
+.btn{height:34px;border-radius:8px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;border:1px solid var(--outline);background:var(--container);color:var(--on);white-space:nowrap}
+.btn.p{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.ghost{background:transparent}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.btn.icon{width:34px;padding:0;justify-content:center}
+.btn.okb{background:var(--okbg);border-color:#9fdcc4;color:var(--okfg)}
+.btn.warnb{background:var(--warnbg);border-color:#f2cf95;color:var(--warnfg)}
+.btn.errb{background:var(--errbg);border-color:#f1b0b0;color:var(--errfg)}
+
+.body{flex:1;display:flex;min-height:0}
+
+/* left list */
+.list{width:310px;background:var(--container);border-right:1px solid var(--outline);padding:16px 14px;display:flex;flex-direction:column;gap:10px}
+.search{height:34px;border:1px solid var(--outline);border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 10px;color:#8a9ab0;gap:6px}
+.filters{display:flex;flex-wrap:wrap;gap:5px}
+.f{font-size:11.5px;padding:3px 9px;border-radius:12px;border:1px solid var(--outline);color:var(--onv);background:#fff}
+.f.on{background:var(--on);color:#fff;border-color:var(--on)}
+.card{background:#fff;border:1px solid var(--outline);border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:5px}
+.card.sel{border:1.5px solid var(--primary);background:#F4F8FF;box-shadow:0 0 0 3px #2563eb1a}
+.card .r1{display:flex;align-items:center;gap:8px}
+.card .no{font-weight:800;font-size:14px}
+.card .meta{font-size:11.5px;color:var(--onv)}
+.bar{height:5px;border-radius:3px;background:var(--gray);display:flex;overflow:hidden}
+.bar i{display:block;height:100%}
+.pill{font-size:11px;font-weight:700;border-radius:10px;padding:2px 8px;white-space:nowrap}
+.s-draft{background:var(--gray);color:var(--grayfg)}
+.s-sub{background:var(--infobg);color:var(--infofg)}
+.s-fix{background:var(--warnbg);color:var(--warnfg)}
+.s-ok{background:var(--okbg);color:var(--okfg)}
+.s-no{background:var(--errbg);color:var(--errfg)}
+.s-wait{background:#fff;color:var(--onv);border:1px dashed var(--outline)}
+
+/* editor */
+.ed{flex:1;min-width:0;padding:16px 20px;display:flex;flex-direction:column;gap:12px;position:relative}
+.panel{background:var(--container);border:1px solid var(--outline);border-radius:12px}
+.top{padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.t1{display:flex;align-items:center;gap:10px}
+.t1 .no{font-size:20px;font-weight:800}
+.round{font-size:12px;color:var(--onv);border:1px solid var(--outline);border-radius:6px;padding:2px 8px;background:#fff}
+.dirty{font-size:12px;color:var(--warnfg);font-weight:700}
+.step{display:flex;align-items:center;gap:0;font-size:12px;color:var(--onv)}
+.step .s{display:flex;align-items:center;gap:6px}
+.step .d{width:20px;height:20px;border-radius:50%;border:2px solid var(--outline);background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--onv)}
+.step .done .d{background:var(--primary);border-color:var(--primary);color:#fff}
+.step .cur .d{border-color:var(--primary);color:var(--primary)}
+.step .cur{color:var(--on);font-weight:700}
+.step .ln{width:34px;height:2px;background:var(--outline);margin:0 8px}
+.step .ln.done{background:var(--primary)}
+.fields{display:grid;grid-template-columns:150px 150px 1fr 1fr;gap:14px}
+.fl label{display:block;font-size:10.5px;font-weight:700;color:var(--onv);letter-spacing:.3px;margin-bottom:4px}
+.in{height:34px;border:1px solid var(--outline);border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 10px}
+.in.ro{background:var(--bright);color:var(--onv)}
+.sum{display:flex;gap:18px;align-items:center;font-size:12.5px;color:var(--onv);border-top:1px solid var(--outline);padding-top:11px}
+.sum b{color:var(--on);font-size:14px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+
+.tbl{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px 0}
+.tb{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.tb h3{font-size:14px;font-weight:800;margin-right:6px}
+.bulk{display:flex;align-items:center;gap:6px;background:var(--sel);border:1px solid #b5cff5;border-radius:8px;padding:3px 4px 3px 10px;font-size:12px;font-weight:700;color:var(--infofg)}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--outline)}
+th{background:var(--high);color:var(--onv);font-size:11.5px;text-align:left;padding:8px 9px;border-bottom:1px solid var(--outline);font-weight:700;white-space:nowrap}
+th .pen{color:var(--primary);font-weight:400}
+td{padding:7px 9px;border-bottom:1px solid #dfe6ee;vertical-align:top;font-size:12.5px}
+tr.sel td{background:#EEF4FE}
+td .n{font-weight:700}
+td .spec{color:var(--onv);font-size:11.5px;margin-top:2px}
+.cmp{display:flex;flex-direction:column;gap:2px}
+.cmp .hd{font-size:11px;color:#8193aa}
+.cmp .sub{font-weight:600}
+.diff{background:var(--warnbg);border-radius:4px;padding:0 4px;margin-left:-4px}
+.tag{font-size:10px;font-weight:800;color:var(--warnfg);border:1px solid #f2cf95;border-radius:4px;padding:0 4px;margin-left:4px;background:#fff}
+.cb{width:15px;height:15px;border:1.5px solid #8193aa;border-radius:3px;display:inline-block;background:#fff;vertical-align:middle}
+.cb.on{background:var(--primary);border-color:var(--primary);position:relative}
+.cb.on:after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.cb.mix{background:var(--primary);border-color:var(--primary);position:relative}
+.cb.mix:after{content:"";position:absolute;left:3px;top:5.5px;width:6px;height:2px;background:#fff}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.note{color:var(--warnfg);font-size:11.5px}
+.src{font-size:10px;color:var(--onv);border:1px solid var(--outline);border-radius:4px;padding:0 4px;margin-left:4px}
+
+.toast{position:absolute;right:24px;bottom:18px;background:var(--on);color:#fff;border-radius:8px;padding:10px 14px;font-size:12.5px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px #0003}
+.toast a{color:#93C5FD;font-weight:700}
+
+.seg.vs span{padding:7px 14px;font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi{background:#fff;border:1px solid var(--outline);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;border-left-width:4px}
+.kpi .v{font-size:22px;font-weight:800}
+.kpi .l{font-size:12px;color:var(--onv)}
+.kpi.on{box-shadow:0 0 0 2px var(--primary)}
+.big{height:10px;border-radius:5px;background:var(--gray);display:flex;overflow:hidden}
+.big i{display:block;height:100%}
+.mini{display:inline-flex;width:70px;height:5px;border-radius:3px;background:#c9d4e1;overflow:hidden;vertical-align:middle;margin-right:6px}
+.mini i{display:block;height:100%}
+.pref{font-size:11.5px;font-weight:700;color:var(--infofg)}
+.det{width:380px;background:var(--container);border-left:1px solid var(--outline);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.det h2{font-size:15px;font-weight:800}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:12.5px}
+.kv span:nth-child(odd){color:var(--onv)}
+.tl{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--outline);margin-left:6px;padding-left:16px}
+.tl .it{position:relative;padding-bottom:14px;display:flex;flex-direction:column;gap:3px}
+.tl .it:before{content:"";position:absolute;left:-23px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--c,#8193aa);border:2px solid var(--container)}
+.sec{font-size:10.5px;font-weight:800;color:var(--onv);letter-spacing:.4px}
+/* annotations */
+.ann{position:absolute;background:#FDE047;color:#1f2937;font-size:11.5px;font-weight:700;border-radius:12px;padding:3px 9px;box-shadow:0 2px 6px #0003;z-index:5;white-space:nowrap}
+.ann:before{content:attr(data-n);display:inline-block;background:#1f2937;color:#FDE047;border-radius:50%;width:16px;height:16px;text-align:center;line-height:16px;margin-right:6px;font-size:10.5px}
+
+/* drawer */
+.scrim{position:absolute;inset:0;background:#17203324}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:640px;background:var(--container);border-left:1px solid var(--outline);box-shadow:-10px 0 30px #17203326;display:flex;flex-direction:column}
+.dh{padding:16px 18px 12px;border-bottom:1px solid var(--outline);display:flex;flex-direction:column;gap:10px}
+.dh .t{display:flex;align-items:center;gap:8px}
+.dh .t h2{font-size:16px;font-weight:800}
+.seg{display:inline-flex;border:1px solid var(--outline);border-radius:8px;overflow:hidden;background:#fff}
+.seg span{padding:5px 12px;font-size:12px;font-weight:700;color:var(--onv);border-right:1px solid var(--outline)}
+.seg span:last-child{border-right:0}
+.seg .on{background:var(--primary);color:#fff}
+.dl{flex:1;overflow:hidden;padding:0}
+.dl table{border:0}
+.dl td{padding:7px 10px}
+tr.h1 td{background:var(--high);font-weight:800;color:var(--on)}
+tr.h2 td{background:var(--bright);font-weight:700;color:var(--on)}
+tr.dim td{color:#90a0b5}
+.lnk{font-size:11px;font-weight:700;color:var(--infofg);background:var(--infobg);border-radius:4px;padding:1px 5px}
+.df{border-top:1px solid var(--outline);padding:12px 18px;display:flex;align-items:center;gap:10px;background:#fff}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<div class="cap">Màn A — Phiếu đã trình, đang ghi nhận kết quả duyệt</div>
+<div class="frame" id="a">
+  <div class="hdr">
+    <div><h1>Phê duyệt vật tư</h1><div class="ctx">HĐ 125/2026/HĐ/THD-KHC</div></div>
+    <div class="seg vs"><span class="on">Phiếu PDVT</span><span>Tổng hợp BoQ</span></div>
+    <div class="sp"></div>
+    <span class="btn ghost">⤓ Nạp BoQ Excel</span>
+    <span class="btn p">＋ Phiếu mới</span>
+  </div>
+
+  <div class="body">
+    <!-- LIST -->
+    <div class="list">
+      <div class="search">⌕ <span>Tìm số phiếu, vật tư, NCC…</span></div>
+      <div class="filters">
+        <span class="f on">Tất cả 6</span><span class="f">Nháp 1</span><span class="f">Đã trình 2</span><span class="f">Yêu cầu sửa 1</span><span class="f">Đã duyệt 2</span>
+      </div>
+
+      <div class="card">
+        <div class="r1"><span class="no">PDVT 06</span><span class="sp"></span><span class="pill s-draft">Nháp</span></div>
+        <div class="meta">Hệ thống PCCC · 7 vật tư</div>
+        <div class="meta">Tạo 08/11/2026</div>
+      </div>
+      <div class="card sel">
+        <div class="r1"><span class="no">PDVT 05</span><span class="round">Lần 2</span><span class="sp"></span><span class="pill s-sub">Đã trình</span></div>
+        <div class="meta">Hệ thống điện · Cty Thành Đạt</div>
+        <div class="bar"><i style="width:50%;background:var(--ok)"></i><i style="width:16.6%;background:var(--warn)"></i><i style="width:8.3%;background:var(--err)"></i></div>
+        <div class="meta">6/12 duyệt · trình 05/11/2026</div>
+      </div>
+      <div class="card">
+        <div class="r1"><span class="no">PDVT 04</span><span class="sp"></span><span class="pill s-fix">Yêu cầu sửa</span></div>
+        <div class="meta">Cấp thoát nước · 9 vật tư</div>
+        <div class="bar"><i style="width:55%;background:var(--ok)"></i><i style="width:45%;background:var(--warn)"></i></div>
+        <div class="meta">5/9 duyệt · 4 cần trình lại</div>
+      </div>
+      <div class="card">
+        <div class="r1"><span class="no">PDVT 03</span><span class="sp"></span><span class="pill s-sub">Đã trình</span></div>
+        <div class="meta">Điều hòa thông gió · 15 vật tư</div>
+        <div class="bar"><i style="width:0%"></i></div>
+        <div class="meta">Chờ kết quả · trình 01/11/2026</div>
+      </div>
+      <div class="card">
+        <div class="r1"><span class="no">PDVT 02</span><span class="sp"></span><span class="pill s-ok">Đã duyệt</span></div>
+        <div class="meta">Kiến trúc hoàn thiện · 22 vật tư</div>
+        <div class="bar"><i style="width:100%;background:var(--ok)"></i></div>
+      </div>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="ed">
+      <div class="panel top">
+        <div class="t1">
+          <span class="no">PDVT 05</span><span class="round">Lần trình 2</span><span class="pill s-sub">Đã trình</span>
+          <span class="dirty">• Chưa lưu</span>
+          <span class="sp"></span>
+          <div class="step">
+            <div class="s done"><span class="d">✓</span>Nháp</div><div class="ln done"></div>
+            <div class="s done"><span class="d">✓</span>Đã trình</div><div class="ln"></div>
+            <div class="s cur"><span class="d">3</span>Ghi nhận kết quả</div><div class="ln"></div>
+            <div class="s"><span class="d">4</span>Hoàn tất</div>
+          </div>
+          <span style="width:18px"></span>
+          <span class="btn">⎙ Xuất Excel</span>
+          <span class="btn p">✓ Lưu kết quả</span>
+          <span class="btn icon">⋯</span>
+        </div>
+        <div class="fields">
+          <div class="fl"><label>NGÀY LẬP</label><div class="in ro">28/10/2026</div></div>
+          <div class="fl"><label>NGÀY TRÌNH</label><div class="in ro">05/11/2026</div></div>
+          <div class="fl"><label>HẠNG MỤC</label><div class="in ro">Hệ thống điện</div></div>
+          <div class="fl"><label>NHÀ CUNG CẤP / NHÀ THẦU</label><div class="in ro">Cty TNHH Thành Đạt</div></div>
+        </div>
+        <div class="sum">
+          <span><b>12</b> vật tư</span>
+          <span><i class="dot" style="background:var(--ok)"></i><b>6</b> đã duyệt</span>
+          <span><i class="dot" style="background:var(--warn)"></i><b>2</b> yêu cầu sửa</span>
+          <span><i class="dot" style="background:var(--err)"></i><b>1</b> không duyệt</span>
+          <span><i class="dot" style="background:#fff;border:1px dashed var(--onv)"></i><b>3</b> chưa có kết quả</span>
+          <span class="sp"></span>
+          <span style="color:var(--warnfg)">⚠ <b style="color:var(--warnfg)">3</b> dòng khác hợp đồng</span>
+        </div>
+      </div>
+
+      <div class="panel tbl">
+        <div class="tb">
+          <h3>Vật tư đệ trình</h3>
+          <div class="bulk">Đã chọn 3
+            <span class="btn sm okb">Duyệt</span><span class="btn sm warnb">Yêu cầu sửa</span><span class="btn sm errb">Không duyệt</span>
+          </div>
+          <span class="sp"></span>
+          <span class="f">Chỉ dòng khác HĐ</span>
+          <span class="f">Chưa có kết quả</span>
+        </div>
+        <table>
+          <tr>
+            <th style="width:30px"><span class="cb mix"></span></th>
+            <th style="width:36px">STT</th>
+            <th>Vật tư · thông số kỹ thuật</th>
+            <th style="width:210px">Nhãn hiệu <span style="font-weight:400">HĐ → Đệ trình</span></th>
+            <th style="width:170px">Xuất xứ <span style="font-weight:400">HĐ → Đệ trình</span></th>
+            <th style="width:50px">ĐVT</th>
+            <th style="width:70px" class="num">KL</th>
+            <th style="width:120px">Kết quả</th>
+            <th style="width:200px">Ghi chú TVGS <span class="pen">✎</span></th>
+          </tr>
+          <tr class="sel">
+            <td><span class="cb on"></span></td><td>1</td>
+            <td><div class="n">Cáp điện CXV 4×25mm²</div><div class="spec">0,6/1kV, ruột đồng, cách điện XLPE</div></td>
+            <td><div class="cmp"><span class="hd">Cadivi</span><span class="sub">Cadivi</span></div></td>
+            <td><div class="cmp"><span class="hd">Việt Nam</span><span class="sub">Việt Nam</span></div></td>
+            <td>m</td><td class="num">1.250,00</td>
+            <td><span class="pill s-wait">Chưa có ▾</span></td><td></td>
+          </tr>
+          <tr class="sel">
+            <td><span class="cb on"></span></td><td>2</td>
+            <td><div class="n">Aptomat MCCB 3P 100A</div><div class="spec">Icu 36kA, chỉnh dòng 0,8–1 In</div></td>
+            <td><div class="cmp"><span class="hd">Schneider</span><span class="sub"><span class="diff">LS Electric</span><span class="tag">KHÁC HĐ</span></span></div></td>
+            <td><div class="cmp"><span class="hd">Pháp</span><span class="sub"><span class="diff">Hàn Quốc</span></span></div></td>
+            <td>cái</td><td class="num">8,00</td>
+            <td><span class="pill s-wait">Chưa có ▾</span></td><td></td>
+          </tr>
+          <tr class="sel">
+            <td><span class="cb on"></span></td><td>3</td>
+            <td><div class="n">Đèn LED panel 600×600 40W</div><div class="spec">4000K, CRI ≥ 80, driver rời</div></td>
+            <td><div class="cmp"><span class="hd">Rạng Đông</span><span class="sub">Rạng Đông</span></div></td>
+            <td><div class="cmp"><span class="hd">Việt Nam</span><span class="sub">Việt Nam</span></div></td>
+            <td>bộ</td><td class="num">320,00</td>
+            <td><span class="pill s-wait">Chưa có ▾</span></td><td></td>
+          </tr>
+          <tr>
+            <td><span class="cb"></span></td><td>4</td>
+            <td><div class="n">Ống luồn dây PVC D20</div><div class="spec">Chống cháy, chịu nén 750N</div></td>
+            <td><div class="cmp"><span class="hd">Sino</span><span class="sub">Sino</span></div></td>
+            <td><div class="cmp"><span class="hd">Việt Nam</span><span class="sub">Việt Nam</span></div></td>
+            <td>m</td><td class="num">3.400,00</td>
+            <td><span class="pill s-ok">Đã duyệt ▾</span></td><td></td>
+          </tr>
+          <tr>
+            <td><span class="cb"></span></td><td>5</td>
+            <td><div class="n">Tủ điện phân phối DB-T1</div><div class="spec">Vỏ thép sơn tĩnh điện, IP42</div></td>
+            <td><div class="cmp"><span class="hd">Theo thiết kế</span><span class="sub"><span class="diff">Tủ Hưng Phát</span><span class="tag">KHÁC HĐ</span></span></div></td>
+            <td><div class="cmp"><span class="hd">Việt Nam</span><span class="sub">Việt Nam</span></div></td>
+            <td>tủ</td><td class="num">1,00</td>
+            <td><span class="pill s-fix">Yêu cầu sửa ▾</span></td><td class="note">Bổ sung catalogue, bản vẽ chế tạo tủ</td>
+          </tr>
+          <tr>
+            <td><span class="cb"></span></td><td>6</td>
+            <td><div class="n">Ổ cắm đôi 3 chấu 16A</div><div class="spec">Mặt nhựa PC chống cháy</div></td>
+            <td><div class="cmp"><span class="hd">Panasonic</span><span class="sub"><span class="diff">Sino</span><span class="tag">KHÁC HĐ</span></span></div></td>
+            <td><div class="cmp"><span class="hd">Nhật Bản</span><span class="sub"><span class="diff">Việt Nam</span></span></div></td>
+            <td>cái</td><td class="num">146,00</td>
+            <td><span class="pill s-no">Không duyệt ▾</span></td><td class="note" style="color:var(--errfg)">Không tương đương, giữ theo HĐ</td>
+          </tr>
+          <tr>
+            <td><span class="cb"></span></td><td>7</td>
+            <td><div class="n">Máng cáp sơn tĩnh điện 200×100</div><div class="spec">Dày 1,2mm <span class="src">Phát sinh</span></div></td>
+            <td><div class="cmp"><span class="hd">—</span><span class="sub">Cơ khí Á Châu</span></div></td>
+            <td><div class="cmp"><span class="hd">—</span><span class="sub">Việt Nam</span></div></td>
+            <td>m</td><td class="num">180,00</td>
+            <td><span class="pill s-ok">Đã duyệt ▾</span></td><td></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="toast">Đã ghi nhận kết quả cho 3 vật tư. <a>Hoàn tác</a></div>
+    </div>
+  </div>
+
+  <span class="ann" data-n="2" style="left:22px;top:650px">↑ Màu theo trạng thái + thanh tiến độ</span>
+  <span class="ann" data-n="3" style="left:1110px;top:62px">Stepper: nút chính đổi theo bước</span>
+  <span class="ann" data-n="4" style="left:770px;top:62px">Cảnh báo chưa lưu</span>
+  <span class="ann" data-n="5" style="left:842px;top:272px">← Đổi kết quả hàng loạt</span>
+  <span class="ann" data-n="6" style="left:730px;top:668px">↑ HĐ (mờ) ↔ Đệ trình (đậm), tô vàng khi khác</span>
+  <span class="ann" data-n="7" style="left:1180px;top:880px">Snackbar tự ẩn, có Hoàn tác</span>
+</div>
+
+<!-- ============================================================ -->
+<div class="cap">Màn B — Phiếu nháp, panel chọn từ BoQ trượt từ phải</div>
+<div class="frame" id="b">
+  <div class="hdr">
+    <div><h1>Phê duyệt vật tư</h1><div class="ctx">HĐ 125/2026/HĐ/THD-KHC</div></div>
+    <div class="seg vs"><span class="on">Phiếu PDVT</span><span>Tổng hợp BoQ</span></div>
+    <div class="sp"></div>
+    <span class="btn ghost">⤓ Nạp BoQ Excel</span>
+    <span class="btn p">＋ Phiếu mới</span>
+  </div>
+  <div class="body">
+    <div class="list">
+      <div class="search">⌕ <span>Tìm số phiếu, vật tư, NCC…</span></div>
+      <div class="filters"><span class="f on">Tất cả 6</span><span class="f">Nháp 1</span><span class="f">Đã trình 2</span><span class="f">Yêu cầu sửa 1</span><span class="f">Đã duyệt 2</span></div>
+      <div class="card sel">
+        <div class="r1"><span class="no">PDVT 06</span><span class="sp"></span><span class="pill s-draft">Nháp</span></div>
+        <div class="meta">Hệ thống PCCC · 7 vật tư</div><div class="meta">Tạo 08/11/2026</div>
+      </div>
+      <div class="card"><div class="r1"><span class="no">PDVT 05</span><span class="round">Lần 2</span><span class="sp"></span><span class="pill s-sub">Đã trình</span></div><div class="meta">Hệ thống điện · Cty Thành Đạt</div><div class="bar"><i style="width:50%;background:var(--ok)"></i><i style="width:16.6%;background:var(--warn)"></i><i style="width:8.3%;background:var(--err)"></i></div></div>
+      <div class="card"><div class="r1"><span class="no">PDVT 04</span><span class="sp"></span><span class="pill s-fix">Yêu cầu sửa</span></div><div class="meta">Cấp thoát nước · 9 vật tư</div></div>
+    </div>
+
+    <div class="ed">
+      <div class="panel top">
+        <div class="t1">
+          <span class="no">PDVT 06</span><span class="pill s-draft">Nháp</span><span class="dirty">• Chưa lưu</span>
+          <span class="sp"></span>
+          <div class="step">
+            <div class="s cur"><span class="d">1</span>Nháp</div><div class="ln"></div>
+            <div class="s"><span class="d">2</span>Đã trình</div><div class="ln"></div>
+            <div class="s"><span class="d">3</span>Kết quả</div>
+          </div>
+          <span style="width:18px"></span>
+          <span class="btn">💾 Lưu</span><span class="btn p">➤ Trình duyệt</span><span class="btn icon">⋯</span>
+        </div>
+        <div class="fields">
+          <div class="fl"><label>SỐ PHIẾU</label><div class="in" style="color:var(--primary);font-weight:700">PDVT 06</div></div>
+          <div class="fl"><label>NGÀY LẬP</label><div class="in">08/11/2026 ▾</div></div>
+          <div class="fl"><label>HẠNG MỤC</label><div class="in">Hệ thống PCCC</div></div>
+          <div class="fl"><label>NHÀ CUNG CẤP / NHÀ THẦU</label><div class="in" style="color:#8a9ab0">Tên nhà cung cấp…</div></div>
+        </div>
+      </div>
+      <div class="panel tbl">
+        <div class="tb"><h3>Vật tư đệ trình</h3><span class="sp"></span><span class="btn sm p">☰ Chọn từ BoQ</span><span class="btn sm">＋ Vật tư phát sinh</span></div>
+        <table>
+          <tr><th style="width:36px">STT</th><th>Vật tư · thông số kỹ thuật</th><th style="width:160px">Nhãn hiệu</th></tr>
+          <tr><td>1</td><td><div class="n">Đầu phun Sprinkler 68°C</div><div class="spec">K=5.6, quay xuống</div></td><td>Tyco</td></tr>
+          <tr><td>2</td><td><div class="n">Bình chữa cháy CO2 MT5</div><div class="spec">5kg, kèm giá treo</div></td><td>Tomoken</td></tr>
+          <tr><td>3</td><td><div class="n">Tủ báo cháy trung tâm 8 kênh</div><div class="spec">Thông thường, 24VDC</div></td><td>Hochiki</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="scrim"></div>
+    <div class="drawer">
+      <div class="dh">
+        <div class="t"><h2>Chọn vật tư từ BoQ</h2><span class="ctx" style="color:var(--onv)">→ thêm vào PDVT 06</span><span class="sp"></span><span class="btn icon sm">✕</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="search" style="flex:1">⌕ <span>Tìm tên, thông số, nhãn hiệu…</span></div>
+          <div class="seg"><span class="on">Chưa lập 38</span><span>Tất cả</span><span>Đã lập</span></div>
+        </div>
+      </div>
+      <div class="dl">
+        <table>
+          <tr class="h1"><td style="width:34px"><span class="cb mix"></span></td><td colspan="4">V. HỆ THỐNG PCCC</td></tr>
+          <tr class="h2"><td><span class="cb on"></span></td><td colspan="4">V.1 Chữa cháy tự động</td></tr>
+          <tr><td><span class="cb on"></span></td><td style="width:48px">V.1.1</td><td><div class="n">Ống thép tráng kẽm DN50</div><div class="spec">SCH40, Hòa Phát · VN</div></td><td>m</td><td class="num">420</td></tr>
+          <tr><td><span class="cb on"></span></td><td>V.1.2</td><td><div class="n">Van báo động ướt DN150</div><div class="spec">UL/FM, Tyco · Mỹ</div></td><td>bộ</td><td class="num">2</td></tr>
+          <tr><td><span class="cb on"></span></td><td>V.1.3</td><td><div class="n">Công tắc dòng chảy DN100</div><div class="spec">Potter · Mỹ</div></td><td>cái</td><td class="num">6</td></tr>
+          <tr class="dim"><td></td><td>V.1.4</td><td><div class="n">Đầu phun Sprinkler 68°C</div><div class="spec">Đã có trong phiếu này</div></td><td>cái</td><td class="num">640</td></tr>
+          <tr class="h2"><td><span class="cb"></span></td><td colspan="4">V.2 Báo cháy</td></tr>
+          <tr><td><span class="cb"></span></td><td>V.2.1</td><td><div class="n">Đầu báo khói quang</div><div class="spec">Hochiki · Nhật Bản</div></td><td>cái</td><td class="num">210</td></tr>
+          <tr><td><span class="cb"></span></td><td>V.2.2</td><td><div class="n">Nút ấn báo cháy</div><div class="spec">Hochiki · Nhật Bản</div></td><td>cái</td><td class="num">24</td></tr>
+          <tr><td><span class="cb"></span></td><td>V.2.3</td><td><div class="n">Chuông báo cháy 24VDC</div><div class="spec">Hochiki · Nhật Bản <span class="lnk">PDVT 03</span></div></td><td>cái</td><td class="num">24</td></tr>
+        </table>
+      </div>
+      <div class="df">
+        <span style="font-weight:700;white-space:nowrap">Đã chọn <span style="color:var(--primary)">3</span> vật tư</span>
+        <span class="ctx" style="color:var(--onv)">Thông số, nhãn hiệu, xuất xứ lấy theo HĐ</span>
+        <span class="sp"></span><span class="btn">Bỏ chọn</span><span class="btn p">Thêm 3 vào PDVT 06</span>
+      </div>
+    </div>
+  </div>
+  <span class="ann" data-n="1" style="left:960px;top:530px">Một nơi duy nhất để chọn BoQ (thay tab 1 + drawer 280px)</span>
+  <span class="ann" data-n="2" style="left:960px;top:566px">↑ Tích đầu mục = chọn cả mục, có trạng thái chọn một phần</span>
+  <span class="ann" data-n="3" style="left:960px;top:602px">↑ Dòng đã có trong phiếu bị làm mờ</span>
+  <span class="ann" data-n="4" style="left:960px;top:638px">↑ Liên kết sang phiếu đã lập</span>
+  <span class="ann" data-n="5" style="left:640px;top:62px">Nháp: nút chính là "Trình duyệt"</span>
+</div>
+
+<!-- ============================================================ -->
+<div class="cap">Màn C — Tổng hợp BoQ: xem BoQ + tình trạng phê duyệt từng vật tư</div>
+<div class="frame" id="c">
+  <div class="hdr">
+    <div><h1>Phê duyệt vật tư</h1><div class="ctx">HĐ 125/2026/HĐ/THD-KHC</div></div>
+    <div class="seg vs"><span>Phiếu PDVT</span><span class="on">Tổng hợp BoQ</span></div>
+    <div class="sp"></div>
+    <span class="btn ghost">⤓ Nạp BoQ Excel</span>
+    <span class="btn">⎙ Xuất bảng tổng hợp</span>
+    <span class="btn p">＋ Lập phiếu từ dòng chọn</span>
+  </div>
+  <div class="body">
+    <div class="ed" style="gap:12px">
+      <div class="kpis">
+        <div class="kpi" style="border-left-color:#8193aa"><span class="v">38</span><span class="l">Chưa lập phiếu</span></div>
+        <div class="kpi" style="border-left-color:var(--info)"><span class="v">19</span><span class="l">Đã trình, chờ kết quả</span></div>
+        <div class="kpi on" style="border-left-color:var(--warn)"><span class="v" style="color:var(--warnfg)">6</span><span class="l">Cần trình lại (sửa / không duyệt)</span></div>
+        <div class="kpi" style="border-left-color:var(--ok)"><span class="v" style="color:var(--okfg)">61</span><span class="l">Đã duyệt · 49%</span></div>
+        <div class="kpi" style="border-left-color:var(--on)"><span class="v">124</span><span class="l">Tổng vật tư BoQ</span></div>
+      </div>
+      <div class="big"><i style="width:49%;background:var(--ok)"></i><i style="width:15%;background:var(--info)"></i><i style="width:5%;background:var(--warn)"></i></div>
+
+      <div class="panel tbl">
+        <div class="tb">
+          <div class="search" style="width:280px">⌕ <span>Tìm vật tư, nhãn hiệu, số phiếu…</span></div>
+          <div class="seg"><span>Tất cả</span><span>Chưa lập</span><span>Chờ KQ</span><span class="on">Cần trình lại</span><span>Đã duyệt</span></div>
+          <span class="f">Hạng mục: Tất cả ▾</span>
+          <span class="sp"></span>
+          <span class="f">⊟ Thu gọn đầu mục</span>
+        </div>
+        <table>
+          <tr>
+            <th style="width:30px"><span class="cb"></span></th>
+            <th style="width:56px">STT</th>
+            <th>Vật tư · thông số theo HĐ</th>
+            <th style="width:150px">Nhãn hiệu HĐ</th>
+            <th style="width:170px">Nhãn hiệu được duyệt</th>
+            <th style="width:130px">Trạng thái</th>
+            <th style="width:120px">Phiếu · lần</th>
+            <th style="width:90px">Ngày duyệt</th>
+          </tr>
+          <tr class="h1"><td></td><td>IV</td><td colspan="6">HỆ THỐNG ĐIỆN <span style="font-weight:600;color:var(--onv);margin-left:10px"><span class="mini"><i style="width:62%;background:var(--ok)"></i><i style="width:20%;background:var(--info)"></i><i style="width:8%;background:var(--warn)"></i></span>26/42 duyệt</span></td></tr>
+          <tr class="sel">
+            <td><span class="cb"></span></td><td>IV.1.3</td>
+            <td><div class="n">Tủ điện phân phối DB-T1</div><div class="spec">Vỏ thép sơn tĩnh điện, IP42</div></td>
+            <td>Theo thiết kế</td><td><span style="color:#8193aa">—</span></td>
+            <td><span class="pill s-fix">Yêu cầu sửa</span></td><td><span class="pref">PDVT 05 · L2</span></td><td></td>
+          </tr>
+          <tr>
+            <td><span class="cb"></span></td><td>IV.1.7</td>
+            <td><div class="n">Ổ cắm đôi 3 chấu 16A</div><div class="spec">Mặt nhựa PC chống cháy</div></td>
+            <td>Panasonic</td><td><span style="color:#8193aa">—</span></td>
+            <td><span class="pill s-no">Không duyệt</span></td><td><span class="pref">PDVT 05 · L2</span></td><td></td>
+          </tr>
+          <tr class="h1"><td></td><td>VI</td><td colspan="6">CẤP THOÁT NƯỚC <span style="font-weight:600;color:var(--onv);margin-left:10px"><span class="mini"><i style="width:55%;background:var(--ok)"></i><i style="width:45%;background:var(--warn)"></i></span>5/9 duyệt</span></td></tr>
+          <tr>
+            <td><span class="cb on"></span></td><td>VI.2.1</td>
+            <td><div class="n">Ống PPR PN20 D25</div><div class="spec">Hàn nhiệt, chịu nhiệt 95°C</div></td>
+            <td>Tiền Phong</td><td><span style="color:#8193aa">—</span></td>
+            <td><span class="pill s-fix">Yêu cầu sửa</span></td><td><span class="pref">PDVT 04 · L1</span></td><td></td>
+          </tr>
+          <tr>
+            <td><span class="cb on"></span></td><td>VI.2.2</td>
+            <td><div class="n">Van cổng đồng DN25</div><div class="spec">PN16, ren trong</div></td>
+            <td>Minh Hòa</td><td><span style="color:#8193aa">—</span></td>
+            <td><span class="pill s-fix">Yêu cầu sửa</span></td><td><span class="pref">PDVT 04 · L1</span></td><td></td>
+          </tr>
+          <tr>
+            <td><span class="cb on"></span></td><td>VI.3.1</td>
+            <td><div class="n">Bồn cầu 1 khối</div><div class="spec">Xả nhấn 2 chế độ 3/4,5L</div></td>
+            <td>TOTO</td><td><span style="color:#8193aa">—</span></td>
+            <td><span class="pill s-fix">Yêu cầu sửa</span></td><td><span class="pref">PDVT 04 · L1</span></td><td></td>
+          </tr>
+          <tr>
+            <td><span class="cb on"></span></td><td>VI.3.4</td>
+            <td><div class="n">Lavabo đặt bàn</div><div class="spec">Sứ men chống bám</div></td>
+            <td>TOTO</td><td><span style="color:#8193aa">—</span></td>
+            <td><span class="pill s-fix">Yêu cầu sửa</span></td><td><span class="pref">PDVT 04 · L1</span></td><td></td>
+          </tr>
+        </table>
+        <div style="padding:10px 2px;color:var(--onv);font-size:12px">Bộ lọc khác cho ra cùng bảng này, ví dụ "Đã duyệt" hiện nhãn hiệu/xuất xứ được duyệt + ngày duyệt, "Tất cả" = BoQ đầy đủ như tab cũ.</div>
+      </div>
+    </div>
+
+    <div class="det">
+      <div class="sec">CHI TIẾT VẬT TƯ</div>
+      <h2>Tủ điện phân phối DB-T1</h2>
+      <div class="kv">
+        <span>STT BoQ</span><span>IV.1.3</span>
+        <span>Thông số HĐ</span><span>Vỏ thép sơn tĩnh điện, IP42</span>
+        <span>Nhãn hiệu HĐ</span><span>Theo thiết kế</span>
+        <span>ĐVT · KL</span><span>tủ · 1,00</span>
+        <span>Trạng thái</span><span><span class="pill s-fix">Yêu cầu sửa</span></span>
+      </div>
+      <div class="sec" style="margin-top:6px">LỊCH SỬ TRÌNH DUYỆT</div>
+      <div class="tl">
+        <div class="it" style="--c:var(--warn)"><b>PDVT 05 · Lần 2</b><span class="meta" style="font-size:12px;color:var(--onv)">Trình 05/11 · Tủ Hưng Phát (VN)</span><span class="pill s-fix" style="align-self:flex-start">Yêu cầu sửa</span><span class="note">Bổ sung catalogue, bản vẽ chế tạo tủ</span></div>
+        <div class="it" style="--c:var(--err)"><b>PDVT 02 · Lần 1</b><span style="font-size:12px;color:var(--onv)">Trình 20/10 · Tủ Sao Mai (VN)</span><span class="pill s-no" style="align-self:flex-start">Không duyệt</span><span class="note" style="color:var(--errfg)">Thiếu chứng nhận thử nghiệm</span></div>
+      </div>
+      <div class="sp"></div>
+      <span class="btn" style="justify-content:center">Mở PDVT 05</span>
+      <span class="btn p" style="justify-content:center">➤ Trình lại (tạo lần 3)</span>
+    </div>
+  </div>
+  <span class="ann" data-n="1" style="left:452px;top:22px">← Chuyển view: Phiếu / Tổng hợp</span>
+  <span class="ann" data-n="2" style="left:520px;top:146px">↑ Bấm KPI = lọc bảng</span>
+  <span class="ann" data-n="3" style="left:560px;top:290px">↑ Tiến độ theo từng đầu mục</span>
+  <span class="ann" data-n="4" style="left:880px;top:640px">↑ Bấm số phiếu → mở phiếu</span>
+  <span class="ann" data-n="5" style="left:1250px;top:448px">↑ Lịch sử mọi lần trình</span>
+  <span class="ann" data-n="6" style="left:1250px;top:840px">↓ Hành động theo trạng thái</span>
+</div>
+</body>
+</html>

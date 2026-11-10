@@ -58,7 +58,11 @@ public sealed class ConstructionDirectivesWindowTests
                     .Invoke(null, new object[] { services });
                 services.AddSingleton(service);
                 using var provider = services.BuildServiceProvider();
-                var pdvtVm = new PdvtViewModel(provider.GetRequiredService<MainViewModel>());
+                var pdvtVm = new PdvtViewModel(provider.GetRequiredService<MainViewModel>())
+                {
+                    // Discard unsaved sheets instead of opening a modal dialog.
+                    Ask = (_, _, _) => MessageBoxResult.No
+                };
                 var pdvtView = new PdvtView { DataContext = pdvtVm, Height = 600 };
                 pdvtVm.NewCommand.Execute(null);
                 var pdvtHost = new Window { Content = new ScrollViewer { Content = pdvtView }, Width = 1300, Height = 720, ShowInTaskbar = false };
@@ -73,20 +77,28 @@ public sealed class ConstructionDirectivesWindowTests
                 Assert.Equal("PDVT 01", pdvtVm.DraftNumber);
                 pdvtVm.CloseEditorCommand.Execute(null);
                 for (var i = 0; i < 83; i++) pdvtVm.BoqItems.Add(new PdvtBoqItem { NoiDung = $"Vật tư {i}" });
+                pdvtVm.ShowSummaryCommand.Execute(null);
                 pdvtHost.UpdateLayout();
-                var boqGrid = FindVisuals<DataGrid>(pdvtView).First();
+                var boqGrid = FindVisuals<DataGrid>(pdvtView).Single(grid => ReferenceEquals(grid.ItemsSource, pdvtVm.SummaryItems));
                 var boqScroll = FindVisuals<ScrollViewer>(boqGrid).First();
-                Assert.True(boqScroll.ScrollableHeight > 0, "Bảng BoQ phải cuộn riêng khi có nhiều vật tư.");
-                Assert.True(boqScroll.ScrollableWidth >= 0, "Bảng BoQ phải hiển thị được trong tab BoQ.");
-                var createButton = FindVisuals<Button>(pdvtView).Single(button => button.Content is string label && label == "Tạo PDVT từ dòng đã chọn");
+                Assert.True(boqScroll.ScrollableHeight > 0, "Bảng tổng hợp BoQ phải cuộn riêng khi có nhiều vật tư.");
+                Assert.True(boqScroll.ScrollableWidth >= 0, "Bảng tổng hợp BoQ phải hiển thị được.");
+                var createButton = FindVisuals<Button>(pdvtView).Single(button => ReferenceEquals(button.Command, pdvtVm.NewFromSelectedCommand));
+                Assert.True(createButton.IsVisible, "Nút lập phiếu từ dòng chọn phải hiện ở màn tổng hợp.");
                 var buttonBottom = createButton.TransformToAncestor(pdvtView).Transform(new Point(0, createButton.ActualHeight)).Y;
                 Assert.True(buttonBottom <= pdvtView.ActualHeight, "Nút tạo PDVT phải nằm trong chiều cao màn PDVT.");
                 pdvtVm.NewCommand.Execute(null);
+                Assert.False(pdvtVm.IsSummaryView);
                 for (var i = 0; i < 100; i++) pdvtVm.DraftMaterials.Add(new PdvtMaterialRow { Stt = i + 1, NoiDung = $"Vật tư {i}" });
                 pdvtHost.UpdateLayout();
                 var draftGrid = FindVisuals<DataGrid>(pdvtView).Single(grid => ReferenceEquals(grid.ItemsSource, pdvtVm.DraftMaterials));
                 var draftScroll = FindVisuals<ScrollViewer>(draftGrid).First();
                 Assert.True(draftScroll.ScrollableHeight > 0, "Bảng tạo PDVT phải cuộn riêng khi có 100 vật tư.");
+                pdvtVm.PickFromBoqCommand.Execute(null);
+                pdvtHost.UpdateLayout();
+                Assert.True(pdvtVm.IsBoqDrawerOpen);
+                Assert.Contains(FindVisuals<DataGrid>(pdvtView), grid => ReferenceEquals(grid.ItemsSource, pdvtVm.DrawerBoqItems) && grid.IsVisible);
+                pdvtVm.CloseDrawerCommand.Execute(null);
                 pdvtVm.CloseEditorCommand.Execute(null);
                 pdvtHost.Close();
                 foreach (var dark in new[] { true, false })

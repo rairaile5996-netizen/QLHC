@@ -127,6 +127,63 @@ public sealed class PdvtService
         return filePath;
     }
 
+    /// <summary>Writes the BoQ approval summary (one row per BoQ line, headings kept) next to the PDVT sheets.</summary>
+    public string ExportSummary(IEnumerable<PdvtBoqItem> items, Document document)
+    {
+        if (string.IsNullOrWhiteSpace(document.FolderPath) || !Directory.Exists(document.FolderPath))
+            throw new DirectoryNotFoundException("Không tìm thấy thư mục hợp đồng để lưu bảng tổng hợp.");
+        var outputFolder = Path.Combine(document.FolderPath, "3.HSCL", "PDVT");
+        Directory.CreateDirectory(outputFolder);
+        var filePath = Path.Combine(outputFolder, "Tong hop phe duyet vat tu.xlsx");
+
+        using var book = new XLWorkbook();
+        var sheet = book.AddWorksheet("Tổng hợp PDVT");
+        sheet.Cell(1, 1).Value = "BẢNG TỔNG HỢP PHÊ DUYỆT VẬT TƯ";
+        sheet.Cell(2, 1).Value = $"Hợp đồng: {document.ContractNumber}";
+        sheet.Range(1, 1, 1, 11).Merge().Style.Font.SetBold().Font.SetFontSize(14);
+        string[] headers = ["STT", "Nội dung vật tư", "Thông số kỹ thuật theo HĐ", "Nhãn hiệu / xuất xứ theo HĐ", "ĐVT", "Khối lượng",
+            "Trạng thái", "Nhãn hiệu được duyệt", "Xuất xứ được duyệt", "Phiếu PDVT", "Ngày duyệt"];
+        const int headerRow = 4;
+        for (var col = 0; col < headers.Length; col++) sheet.Cell(headerRow, col + 1).Value = headers[col];
+        var header = sheet.Range(headerRow, 1, headerRow, headers.Length);
+        header.Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.FromHtml("#D7E1EC"));
+
+        var row = headerRow + 1;
+        foreach (var item in items)
+        {
+            sheet.Cell(row, 1).Value = item.SttBoq;
+            sheet.Cell(row, 2).Value = item.NoiDung;
+            if (item.IsHeading)
+            {
+                sheet.Cell(row, 7).Value = $"{item.ChildApproved}/{item.ChildTotal} đã duyệt";
+                sheet.Range(row, 1, row, headers.Length).Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.FromHtml("#EEF2F7"));
+            }
+            else
+            {
+                sheet.Cell(row, 3).Value = item.ThongSoKyThuat;
+                sheet.Cell(row, 4).Value = item.BrandOriginDisplay;
+                sheet.Cell(row, 5).Value = item.DonViTinh;
+                sheet.Cell(row, 6).Value = item.KhoiLuong;
+                sheet.Cell(row, 7).Value = item.StatusLabel;
+                sheet.Cell(row, 8).Value = item.ApprovedBrand;
+                sheet.Cell(row, 9).Value = item.ApprovedOrigin;
+                sheet.Cell(row, 10).Value = item.LatestReference;
+                if (item.ApprovedDate is { } date) sheet.Cell(row, 11).Value = date.ToString("dd/MM/yyyy");
+            }
+            row++;
+        }
+
+        var table = sheet.Range(headerRow, 1, Math.Max(headerRow, row - 1), headers.Length);
+        table.Style.Border.SetInsideBorder(XLBorderStyleValues.Thin).Border.SetOutsideBorder(XLBorderStyleValues.Thin);
+        table.Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center).Alignment.SetWrapText(true);
+        double[] widths = [8, 40, 34, 26, 8, 12, 16, 22, 16, 16, 12];
+        for (var col = 0; col < widths.Length; col++) sheet.Column(col + 1).Width = widths[col];
+        sheet.Column(6).Style.NumberFormat.Format = "#,##0.00";
+        sheet.SheetView.FreezeRows(headerRow);
+        book.SaveAs(filePath);
+        return filePath;
+    }
+
     private static double CalculateAutoRowHeight(IXLWorksheet sheet, int rowNumber)
     {
         var maxLines = 1;
