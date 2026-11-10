@@ -52,6 +52,9 @@ public partial class PdvtViewModel : ObservableObject
     private bool _settingAllChecked;
     private List<(PdvtMaterialRow Row, PdvtApprovalStatus Status, DateTime? Date)> _undo = [];
     private DispatcherTimer? _toastTimer;
+    private readonly HashSet<PdvtBoqItem> _attached = [];
+    private readonly Dictionary<string, PdvtBoqItem> _extraCache = [];
+    private List<PdvtBoqItem> _extras = [];
 
     /// <summary>Confirmation hook (message, title, buttons). Tests replace it to avoid modal dialogs.</summary>
     public Func<string, string, MessageBoxButton, MessageBoxResult> Ask { get; set; } =
@@ -64,6 +67,8 @@ public partial class PdvtViewModel : ObservableObject
     public ObservableCollection<PdvtMaterialRow> DraftMaterials { get; } = [];
     public ObservableCollection<PdvtStep> Steps { get; } = [];
     public ObservableCollection<string> SummaryCategories { get; } = [AllCategories];
+    /// <summary>Unused BoQ lines a "phát sinh" material can be attached to.</summary>
+    public ObservableCollection<PdvtBoqItem> LinkCandidates { get; } = [];
     public ICollectionView DraftMaterialsView { get; }
 
     public IReadOnlyList<PdvtApprovalStatusOption> ApprovalOptions { get; } =
@@ -129,6 +134,8 @@ public partial class PdvtViewModel : ObservableObject
     [ObservableProperty] private int _kpiRework;
     [ObservableProperty] private int _kpiApproved;
     [ObservableProperty] private int _kpiTotal;
+    [ObservableProperty][NotifyPropertyChangedFor(nameof(KpiTotalLabel))] private int _extraCount;
+    [ObservableProperty] private PdvtBoqItem? _linkTarget;
 
     // toast
     [ObservableProperty] private string _statusMessage = string.Empty;
@@ -143,7 +150,8 @@ public partial class PdvtViewModel : ObservableObject
     public string ContractLabel => _main.SelectedDocument is { } document && !string.IsNullOrWhiteSpace(document.ContractNumber)
         ? $"HĐ {document.ContractNumber}"
         : "Chưa chọn hợp đồng";
-    public bool HasBoq => KpiTotal > 0;
+    public bool HasBoq => KpiTotal - ExtraCount > 0;
+    public string KpiTotalLabel => ExtraCount > 0 ? $"Tổng vật tư (gồm {ExtraCount} phát sinh)" : "Tổng vật tư BoQ";
     public int UnassignedBoqCount => KpiUnassigned;
     public int ApprovedPercent => KpiTotal == 0 ? 0 : (int)Math.Round(100.0 * KpiApproved / KpiTotal);
 
@@ -197,6 +205,8 @@ public partial class PdvtViewModel : ObservableObject
     partial void OnDraftSupplierChanged(string value) => MarkDirty();
     partial void OnDraftSubmittedDateChanged(DateTime? value) => MarkDirty();
     partial void OnKpiTotalChanged(int value) { OnPropertyChanged(nameof(HasBoq)); OnPropertyChanged(nameof(ApprovedPercent)); }
+    partial void OnExtraCountChanged(int value) => OnPropertyChanged(nameof(HasBoq));
+    partial void OnSelectedSummaryItemChanged(PdvtBoqItem? value) => LinkTarget = null;
     partial void OnKpiApprovedChanged(int value) => OnPropertyChanged(nameof(ApprovedPercent));
     partial void OnKpiUnassignedChanged(int value) => OnPropertyChanged(nameof(UnassignedBoqCount));
 
@@ -210,7 +220,9 @@ public partial class PdvtViewModel : ObservableObject
     partial void OnIsBoqDrawerOpenChanged(bool value)
     {
         ClearBoqSelection();
-        if (value) RefreshDrawer();
+        // Always refresh: closing the drawer must clear the "already in this sheet" dimming used only there.
+        RefreshDrawer();
+        if (!value) RefreshSummary();
     }
 
     partial void OnSelectedRecordChanged(PdvtRecord? oldValue, PdvtRecord? newValue)
@@ -257,6 +269,7 @@ public partial class PdvtViewModel : ObservableObject
 
     private void AttachBoqItem(PdvtBoqItem item)
     {
+        if (!_attached.Add(item)) return;
         item.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName != nameof(PdvtBoqItem.IsSelected)) return;
@@ -265,22 +278,35 @@ public partial class PdvtViewModel : ObservableObject
         };
     }
 
+    /// <summary>BoQ (incl. appendices) followed by the virtual "phát sinh" lines.</summary>
+    private List<PdvtBoqItem> AllItems => BoqItems.Concat(_extras).ToList();
+
     /// <summary>Recomputes BoQ progress, KPIs, record counts and every derived list.</summary>
     private void Recompute()
     {
-        PdvtProgress.Apply(BoqItems, _records);
-        var materials = BoqItems.Where(x => !x.IsHeading).ToList();
+        _extras = PdvtProgress.BuildExtraItems(BoqItems, _records, _extraCache);
+        foreach (var extra in _extras) AttachBoqItem(extra);
+        var all = AllItems;
+        PdvtProgress.Apply(all, _records);
+        var materials = all.Where(x => !x.IsHeading).ToList();
         KpiTotal = materials.Count;
         KpiUnassigned = materials.Count(x => x.Progress == PdvtBoqProgress.ChuaLap);
         KpiPending = materials.Count(x => x.Progress == PdvtBoqProgress.ChoKetQua);
         KpiRework = materials.Count(x => x.Progress == PdvtBoqProgress.CanTrinhLai);
         KpiApproved = materials.Count(x => x.Progress == PdvtBoqProgress.DaDuyet);
+        ExtraCount = materials.Count(x => x.IsExtra);
 
         var keepCategory = SummaryCategory;
         SummaryCategories.Clear();
         SummaryCategories.Add(AllCategories);
-        foreach (var heading in BoqItems.Where(x => x.IsTopHeading)) SummaryCategories.Add(CategoryLabel(heading));
+        foreach (var heading in all.Where(x => x.IsTopHeading)) SummaryCategories.Add(CategoryLabel(heading));
         SummaryCategory = SummaryCategories.Contains(keepCategory) ? keepCategory : AllCategories;
+
+        // Unused BoQ lines a "phát sinh" material can be attached to; appendix lines first.
+        LinkCandidates.Clear();
+        foreach (var item in BoqItems.Where(x => !x.IsHeading && x.Progress == PdvtBoqProgress.ChuaLap)
+                     .OrderBy(x => PdvtProgress.IsAppendixItem(x) ? 0 : 1))
+            LinkCandidates.Add(item);
 
         RefreshSummary();
         RefreshDrawer();
@@ -540,19 +566,21 @@ public partial class PdvtViewModel : ObservableObject
     }
 
     private void UpdateSelectedBoqCount() =>
-        SelectedBoqCount = BoqItems.Count(x => !x.IsHeading && x.IsSelected && !(IsBoqDrawerOpen && x.IsInDraft));
+        SelectedBoqCount = AllItems.Count(x => !x.IsHeading && x.IsSelected && !(IsBoqDrawerOpen && x.IsInDraft));
 
     private void ClearBoqSelection()
     {
         _suppressCascade = true;
-        foreach (var item in BoqItems) item.IsSelected = false;
+        foreach (var item in AllItems) item.IsSelected = false;
         _suppressCascade = false;
         UpdateSelectedBoqCount();
     }
 
     private void RefreshDrawer()
     {
-        var inDraft = DraftMaterials.Select(x => x.BoqItemId).Where(x => x.Length > 0).ToHashSet();
+        var inDraft = IsBoqDrawerOpen
+            ? DraftMaterials.Select(x => x.BoqItemId).Where(x => x.Length > 0).ToHashSet()
+            : [];
         foreach (var item in BoqItems) item.IsInDraft = !item.IsHeading && inDraft.Contains(item.Id);
 
         var keyword = BoqSearchText.Trim();
@@ -568,9 +596,10 @@ public partial class PdvtViewModel : ObservableObject
     private void RefreshSummary()
     {
         var keyword = SummarySearchText.Trim();
+        var all = AllItems;
         var section = SummaryCategory == AllCategories
             ? null
-            : BoqItems.FirstOrDefault(x => x.IsTopHeading && CategoryLabel(x) == SummaryCategory);
+            : all.FirstOrDefault(x => x.IsTopHeading && CategoryLabel(x) == SummaryCategory);
         bool Visible(PdvtBoqItem item) =>
             (section == null || PdvtProgress.IsInSection(item, section)) &&
             SummaryFilter switch
@@ -583,7 +612,7 @@ public partial class PdvtViewModel : ObservableObject
             } &&
             MatchesKeyword(item, keyword);
         var keep = SelectedSummaryItem;
-        Fill(SummaryItems, BuildHierarchy(BoqItems, Visible, CollapseHeadings, section));
+        Fill(SummaryItems, BuildHierarchy(all, Visible, CollapseHeadings, section));
         SelectedSummaryItem = keep != null && SummaryItems.Contains(keep) ? keep : null;
     }
 
@@ -627,6 +656,11 @@ public partial class PdvtViewModel : ObservableObject
         var added = 0;
         foreach (var item in items.Where(x => !x.IsHeading))
         {
+            if (item.IsExtra)
+            {
+                if (AddExtraLineToDraft(item)) added++;
+                continue;
+            }
             if (DraftMaterials.Any(x => x.BoqItemId == item.Id)) continue;
             var thongSo = !string.IsNullOrWhiteSpace(item.ThongSoKyThuat) ? item.ThongSoKyThuat : item.Model;
             var brandHd = string.IsNullOrWhiteSpace(item.NhanHieuTheoHd) ? item.NhanHieuXuatXu : item.NhanHieuTheoHd;
@@ -662,6 +696,23 @@ public partial class PdvtViewModel : ObservableObject
         return added;
     }
 
+    /// <summary>Re-submits a "phát sinh" material in the open sheet, copying its latest submitted content.</summary>
+    private bool AddExtraLineToDraft(PdvtBoqItem item)
+    {
+        if (DraftMaterials.Any(x => x.IsExtra && x.LineKey == item.ExtraKey)) return false;
+        var latest = _records.OrderBy(r => r.Date).ThenBy(r => r.Version)
+            .SelectMany(r => r.Materials).LastOrDefault(m => m.IsExtra && m.LineKey == item.ExtraKey);
+        if (latest == null) return false;
+        var copy = Clone(latest);
+        copy.Id = Guid.NewGuid().ToString("N");
+        copy.ExtraKey = item.ExtraKey;
+        copy.Status = PdvtApprovalStatus.ChuaTrinh;
+        copy.ApprovedDate = null;
+        copy.ReviewNote = string.Empty;
+        DraftMaterials.Add(copy);
+        return true;
+    }
+
     // ------------------------------------------------------------------ commands: navigation
 
     [RelayCommand]
@@ -683,7 +734,7 @@ public partial class PdvtViewModel : ObservableObject
     [RelayCommand]
     private void NewFromSelected()
     {
-        var selected = BoqItems.Where(x => !x.IsHeading && x.IsSelected).ToList();
+        var selected = AllItems.Where(x => !x.IsHeading && x.IsSelected).ToList();
         if (selected.Count == 0) { ShowToast("Chưa tích vật tư nào trong bảng.", isError: true); return; }
         if (!ConfirmLeave()) return;
         StartBlankDraft();
@@ -741,21 +792,23 @@ public partial class PdvtViewModel : ObservableObject
         ShowToast($"Đã thêm {added} vật tư vào {DraftNumber}. Bấm Lưu để ghi lại.");
     }
 
+    /// <summary>Replaces the contract BoQ. Appendix sections (PL1, PL2…) added earlier are kept.</summary>
     [RelayCommand]
     private void ImportBoq()
     {
         if (_main.SelectedDocument == null) { ShowToast("Chọn hợp đồng trước khi nạp BoQ.", isError: true); return; }
-        var dialog = new OpenFileDialog { Filter = "Excel BoQ (.xlsx, .xlsm)|*.xlsx;*.xlsm" };
-        if (dialog.ShowDialog() != true) return;
+        if (PickBoqFile() is not { } path) return;
         try
         {
-            var imported = PdvtService.ReadBoq(dialog.FileName);
+            var imported = PdvtService.ReadBoq(path);
             if (!imported.Any(item => !item.IsHeading)) { ShowToast("File BoQ không có dòng vật tư nào.", isError: true); return; }
+            var appendix = BoqItems.Where(PdvtProgress.IsAppendixItem).ToList();
+            var mainItems = BoqItems.Except(appendix).ToList();
             // Keep ids of lines that already existed so saved sheets stay linked.
-            var usedIds = new HashSet<string>();
+            var usedIds = appendix.Select(x => x.Id).ToHashSet();
             foreach (var item in imported)
             {
-                var prior = BoqItems.FirstOrDefault(old =>
+                var prior = mainItems.FirstOrDefault(old =>
                     !usedIds.Contains(old.Id) &&
                     string.Equals(old.NoiDung, item.NoiDung, StringComparison.CurrentCultureIgnoreCase) &&
                     string.Equals(old.ThongSoKyThuat, item.ThongSoKyThuat, StringComparison.CurrentCultureIgnoreCase));
@@ -763,6 +816,7 @@ public partial class PdvtViewModel : ObservableObject
                 else
                 {
                     var linked = _records.SelectMany(record => record.Materials).FirstOrDefault(material =>
+                        !material.IsExtra &&
                         !usedIds.Contains(material.BoqItemId) &&
                         string.Equals(material.NoiDung, item.NoiDung, StringComparison.CurrentCultureIgnoreCase) &&
                         string.Equals(material.ThongSoKyThuat, item.ThongSoKyThuat, StringComparison.CurrentCultureIgnoreCase));
@@ -772,17 +826,116 @@ public partial class PdvtViewModel : ObservableObject
             }
             _bulkBoq = true;
             BoqItems.Clear();
-            foreach (var item in imported) BoqItems.Add(item);
+            foreach (var item in imported.Concat(appendix)) BoqItems.Add(item);
             _bulkBoq = false;
             _service.SaveBoq(_main.SelectedDocument.Id, BoqItems);
             Recompute();
-            ShowToast($"Đã nạp {KpiTotal} vật tư từ {System.IO.Path.GetFileName(dialog.FileName)}.");
+            var kept = appendix.Count(x => !x.IsHeading);
+            ShowToast($"Đã nạp {imported.Count(x => !x.IsHeading)} vật tư từ {System.IO.Path.GetFileName(path)}" +
+                      (kept > 0 ? $", giữ nguyên {kept} vật tư phụ lục." : "."));
         }
         catch (Exception ex)
         {
             _bulkBoq = false;
             ShowToast($"Không đọc được BoQ: {ex.Message}", isError: true);
         }
+    }
+
+    /// <summary>Adds an appendix BoQ (phụ lục) after the contract BoQ and links matching "phát sinh" materials to it.</summary>
+    [RelayCommand]
+    private void ImportAppendix()
+    {
+        if (_main.SelectedDocument == null) { ShowToast("Chọn hợp đồng trước khi nạp phụ lục.", isError: true); return; }
+        if (PickBoqFile() is not { } path) return;
+        try
+        {
+            var imported = PdvtService.ReadBoq(path);
+            if (!imported.Any(item => !item.IsHeading)) { ShowToast("File phụ lục không có dòng vật tư nào.", isError: true); return; }
+            AddAppendix(imported, System.IO.Path.GetFileNameWithoutExtension(path));
+        }
+        catch (Exception ex)
+        {
+            _bulkBoq = false;
+            ShowToast($"Không đọc được phụ lục: {ex.Message}", isError: true);
+        }
+    }
+
+    /// <summary>Appends parsed appendix lines and auto-links "phát sinh" materials whose name matches exactly one new line.</summary>
+    public void AddAppendix(List<PdvtBoqItem> imported, string label)
+    {
+        if (_main.SelectedDocument == null) return;
+        var extras = _extras.ToList();
+        _bulkBoq = true;
+        var list = BoqItems.ToList();
+        var added = PdvtProgress.AppendAppendix(list, imported, label);
+        foreach (var item in list.Skip(BoqItems.Count)) BoqItems.Add(item);
+        _bulkBoq = false;
+        _service.SaveBoq(_main.SelectedDocument.Id, BoqItems);
+
+        var linked = PdvtProgress.AutoLinkExtras(_records, extras, added);
+        if (linked > 0)
+        {
+            _service.Save(_main.SelectedDocument.Id, _records);
+            SyncDraftLinks();
+        }
+        Recompute();
+        RefreshRecords();
+        var code = BoqItems.Last(x => x.IsTopHeading).SttBoq;
+        ShowToast($"Đã thêm phụ lục {code} với {added.Count} vật tư" +
+                  (linked > 0 ? $"; tự gắn {linked} vật tư phát sinh trùng tên." : ".") +
+                  (ExtraCount > 0 ? " Phát sinh còn lại có thể gắn tay ở màn Tổng hợp." : string.Empty));
+    }
+
+    private static string? PickBoqFile()
+    {
+        var dialog = new OpenFileDialog { Filter = "Excel BoQ (.xlsx, .xlsm)|*.xlsx;*.xlsm" };
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
+    }
+
+    // ------------------------------------------------------------------ commands: phát sinh ↔ BoQ
+
+    /// <summary>Attaches the selected "phát sinh" material (all its rounds) to the chosen BoQ / appendix line.</summary>
+    [RelayCommand]
+    private void LinkExtra()
+    {
+        if (_main.SelectedDocument == null || SelectedSummaryItem is not { IsExtra: true, IsHeading: false } extra) return;
+        if (LinkTarget is not { } target) { ShowToast("Chọn dòng BoQ / phụ lục để gắn.", isError: true); return; }
+        if (Ask($"Gắn \"{extra.NoiDung}\" vào dòng {target.LinkLabel}?\nLịch sử trình duyệt và kết quả sẽ chuyển sang dòng này.",
+                "Gắn vật tư phát sinh", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+        PdvtProgress.LinkExtra(_records, extra.ExtraKey, target.Id);
+        _service.Save(_main.SelectedDocument.Id, _records);
+        SyncDraftLinks();
+        Recompute();
+        RefreshRecords();
+        SelectedSummaryItem = SummaryItems.Contains(target) ? target : null;
+        ShowToast($"Đã gắn vào {target.LinkLabel}.");
+    }
+
+    [RelayCommand]
+    private void UnlinkExtras(PdvtBoqItem? item)
+    {
+        if (_main.SelectedDocument == null || item is not { HasLinkedExtra: true }) return;
+        if (Ask($"Tách các lần trình dạng phát sinh khỏi dòng {item.LinkLabel}?\nChúng sẽ quay lại nhóm \"Phát sinh ngoài BoQ\".",
+                "Tách vật tư phát sinh", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+        PdvtProgress.UnlinkExtras(_records, item.Id);
+        _service.Save(_main.SelectedDocument.Id, _records);
+        SyncDraftLinks();
+        Recompute();
+        RefreshRecords();
+        ShowToast("Đã tách vật tư phát sinh.");
+    }
+
+    /// <summary>Copies link changes into the open sheet so a later save does not undo them.</summary>
+    private void SyncDraftLinks()
+    {
+        if (_editingRecord == null) return;
+        var saved = _editingRecord.Materials.ToDictionary(x => x.Id);
+        foreach (var row in DraftMaterials.Where(x => x.IsExtra))
+            if (saved.TryGetValue(row.Id, out var source))
+            {
+                row.BoqItemId = source.BoqItemId;
+                row.ExtraKey = source.ExtraKey;
+            }
     }
 
     // ------------------------------------------------------------------ commands: editing
@@ -874,6 +1027,7 @@ public partial class PdvtViewModel : ObservableObject
             {
                 var copy = Clone(row);
                 copy.Id = Guid.NewGuid().ToString("N");
+                if (copy.IsExtra) copy.ExtraKey = row.LineKey;
                 copy.Status = PdvtApprovalStatus.ChuaTrinh;
                 copy.ApprovedDate = null;
                 copy.ReviewNote = string.Empty;
@@ -961,10 +1115,10 @@ public partial class PdvtViewModel : ObservableObject
     private void ExportSummary()
     {
         if (_main.SelectedDocument == null) { ShowToast("Chọn hợp đồng trước.", isError: true); return; }
-        if (!HasBoq) { ShowToast("Chưa có dữ liệu BoQ để xuất.", isError: true); return; }
+        if (KpiTotal == 0) { ShowToast("Chưa có dữ liệu BoQ hoặc phát sinh để xuất.", isError: true); return; }
         try
         {
-            var path = _service.ExportSummary(BoqItems, _main.SelectedDocument);
+            var path = _service.ExportSummary(AllItems, _main.SelectedDocument);
             OpenPath(path);
             ShowToast($"Đã xuất {System.IO.Path.GetFileName(path)}.");
         }
@@ -1086,7 +1240,7 @@ public partial class PdvtViewModel : ObservableObject
 
     private static PdvtMaterialRow Clone(PdvtMaterialRow row) => new()
     {
-        Id = row.Id, Source = row.Source, BoqItemId = row.BoqItemId, NoiDung = row.NoiDung,
+        Id = row.Id, Source = row.Source, BoqItemId = row.BoqItemId, ExtraKey = row.ExtraKey, NoiDung = row.NoiDung,
         NoiDungTheoHd = row.NoiDungTheoHd, ThongSoKyThuat = row.ThongSoKyThuat, ThongSoTheoHd = row.ThongSoTheoHd,
         ModelTheoHd = row.ModelTheoHd, NhanHieuTheoHd = row.NhanHieuTheoHd,
         XuatXuTheoHd = row.XuatXuTheoHd, XuatXuDeTrinh = row.XuatXuDeTrinh,
