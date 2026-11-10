@@ -1277,6 +1277,13 @@
                                                              Text="{Binding ThongSoKyThuat, UpdateSourceTrigger=PropertyChanged}"
                                                              IsReadOnly="{Binding Data.IsLocked, Source={StaticResource Vm}}"/>
                                                 </DockPanel>
+                                                <DockPanel Margin="-5,0,0,0" Visibility="{Binding HasModel, Converter={StaticResource BoolVis}}">
+                                                    <TextBlock DockPanel.Dock="Left" Text="Model:" FontSize="11.5" Margin="5,2,2,0"
+                                                               Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                                    <TextBox Style="{StaticResource Pdvt.CellBox}" FontSize="11.5" FontWeight="SemiBold" Tag="Model / mã hiệu…"
+                                                             Text="{Binding Model, UpdateSourceTrigger=PropertyChanged}"
+                                                             IsReadOnly="{Binding Data.IsLocked, Source={StaticResource Vm}}"/>
+                                                </DockPanel>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -1726,7 +1733,7 @@
                                         <DataTemplate>
                                             <StackPanel>
                                                 <TextBlock Text="{Binding NoiDung}" TextWrapping="Wrap"/>
-                                                <TextBlock x:Name="Spec" Text="{Binding ThongSoKyThuat}" Style="{StaticResource Pdvt.Muted}" FontSize="11.5" FontWeight="Normal" Margin="0,2,0,0"/>
+                                                <TextBlock x:Name="Spec" Text="{Binding SpecWithModel}" Style="{StaticResource Pdvt.Muted}" FontSize="11.5" FontWeight="Normal" Margin="0,2,0,0"/>
                                                 <!-- Heading progress -->
                                                 <StackPanel x:Name="Progress" Orientation="Horizontal" Margin="0,4,0,0" Visibility="Collapsed">
                                                     <Border Width="90" Height="6" CornerRadius="3" VerticalAlignment="Center" ClipToBounds="True"
@@ -1754,7 +1761,7 @@
                                                     <Setter TargetName="Spec" Property="Visibility" Value="Collapsed"/>
                                                     <Setter TargetName="Progress" Property="Visibility" Value="Visible"/>
                                                 </DataTrigger>
-                                                <DataTrigger Binding="{Binding ThongSoKyThuat}" Value="">
+                                                <DataTrigger Binding="{Binding SpecWithModel}" Value="">
                                                     <Setter TargetName="Spec" Property="Visibility" Value="Collapsed"/>
                                                 </DataTrigger>
                                             </DataTemplate.Triggers>
@@ -1989,8 +1996,8 @@
                                     </Grid.Resources>
                                     <TextBlock Grid.Row="0" Text="STT BoQ" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
                                     <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SttBoq}"/>
-                                    <TextBlock Grid.Row="1" Text="Thông số HĐ" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ThongSoKyThuat}"/>
+                                    <TextBlock Grid.Row="1" Text="Model · thông số" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SpecWithModel}"/>
                                     <TextBlock Grid.Row="2" Text="Nhãn hiệu HĐ" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
                                     <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding BrandOriginDisplay}"/>
                                     <TextBlock Grid.Row="3" Text="ĐVT · KL" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>

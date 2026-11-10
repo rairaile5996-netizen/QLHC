@@ -43,6 +43,75 @@ public sealed class PdvtServiceTests
     }
 
     [Fact]
+    public void ExportExcelFillsPlaceholderRowWhereverTheTemplatePutsIt()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"pdvt-placeholder-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var template = Path.Combine(root, "custom.xlsx");
+        try
+        {
+            using (var book = new XLWorkbook())
+            {
+                var sheet = book.AddWorksheet("pdvt 01");
+                sheet.Cell(1, 1).Value = "Số: {SoPDVT}";
+                sheet.Cell(4, 1).Value = "STT";
+                sheet.Cell(5, 1).Value = "{STT}";
+                sheet.Cell(5, 2).Value = "{NoiDung}";
+                sheet.Cell(5, 3).Value = "{DVT}";
+                sheet.Cell(5, 4).Value = "{KhoiLuong}";
+                sheet.Cell(5, 5).Value = "{NhanHieu} ({XuatXu})";   // several placeholders in one cell
+                sheet.Range(5, 6, 5, 7).Merge();
+                sheet.Cell(5, 6).Value = "{ModelThongSo}";
+                sheet.Cell(5, 8).Value = "{NhanHieuHD}";
+                sheet.Cell(5, 9).FormulaA1 = "D5*2";                  // formulas in the row are copied too
+                sheet.Cell(7, 1).Value = "Tổng:";
+                sheet.Cell(7, 4).FormulaA1 = "SUM(D5:D5)";
+                book.SaveAs(template);
+            }
+            var record = new PdvtRecord { Number = "PDVT 07", Materials = [
+                new PdvtMaterialRow { NoiDung = "MCCB 3P 1000A", DonViTinh = "Cái", KhoiLuong = 2, NhanHieuPheDuyet = "Schneider", XuatXuDeTrinh = "Pháp",
+                    Model = "C100N320FM", ThongSoKyThuat = "50kA", NhanHieuTheoHd = "Schneider/ Asia" },
+                new PdvtMaterialRow { NoiDung = "Đèn báo pha đỏ", DonViTinh = "Cái", KhoiLuong = 1.5m, NhanHieuPheDuyet = "Ilec" },
+                new PdvtMaterialRow { NoiDung = "Cầu chì 2A", DonViTinh = "Bộ", KhoiLuong = 9 }
+            ] };
+
+            var path = new PdvtService().ExportExcel(record, new Document { FolderPath = root }, templatePath: template);
+
+            using var result = new XLWorkbook(path);
+            var ws = result.Worksheet(1);
+            Assert.Equal("Số: PDVT 07", ws.Cell(1, 1).GetString());
+            Assert.Equal(1, ws.Cell(5, 1).GetValue<int>());
+            Assert.Equal(3, ws.Cell(7, 1).GetValue<int>());
+            Assert.Equal("Đèn báo pha đỏ", ws.Cell(6, 2).GetString());
+            Assert.Equal(1.5m, ws.Cell(6, 4).GetValue<decimal>());           // numeric, not text
+            Assert.Equal("Schneider (Pháp)", ws.Cell(5, 5).GetString());
+            Assert.Equal("C100N320FM\n50kA", ws.Cell(5, 6).GetString());
+            Assert.True(ws.Cell(6, 6).IsMerged());
+            Assert.Equal("Schneider/ Asia", ws.Cell(5, 8).GetString());
+            Assert.Equal("D6*2", ws.Cell(6, 9).FormulaA1);
+            Assert.Equal("Tổng:", ws.Cell(9, 1).GetString());              // rows below shift down
+            Assert.Equal("SUM(D5:D7)", ws.Cell(9, 4).FormulaA1);           // and the total covers all rows
+            Assert.DoesNotContain(ws.CellsUsed(), c => c.GetString().Contains('{'));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void BundledTemplateUsesPlaceholderRow()
+    {
+        var template = Path.Combine(FindRepoRoot(), "DocumentManagement", "Templates", "Pdvt", "PDVT_template.xlsx");
+        using var book = new XLWorkbook(template);
+        Assert.Equal(15, PdvtService.FindMaterialRow(book.Worksheet("pdvt 01")));
+    }
+
+    private static string FindRepoRoot([System.Runtime.CompilerServices.CallerFilePath] string sourceFile = "")
+    {
+        var dir = new FileInfo(sourceFile).Directory;
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "DocumentManagement.sln"))) dir = dir.Parent;
+        return dir?.FullName ?? throw new DirectoryNotFoundException("Repository root not found.");
+    }
+
+    [Fact]
     public void ExportSummaryWritesOneRowPerBoqLineWithApprovalState()
     {
         var root = Path.Combine(Path.GetTempPath(), $"pdvt-summary-{Guid.NewGuid():N}");
@@ -134,7 +203,7 @@ public sealed class PdvtServiceTests
             var items = PdvtService.ReadBoq(path);
             Assert.Equal(["Hệ thống điện", "Dây cáp điện", "Cáp điện", "Ống điện", "Ống SP"], items.Select(item => item.NoiDung));
             Assert.Equal([true, true, false, true, false], items.Select(item => item.IsHeading));
-            Assert.Equal("I.1", items[2].SectionCode);
+            Assert.Equal("I>I.1", items[2].SectionCode); // full heading path
             Assert.Equal("II", items[4].SectionCode);
         }
         finally { if (File.Exists(path)) File.Delete(path); }

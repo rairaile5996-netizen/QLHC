@@ -87,10 +87,10 @@ public static class PdvtProgress
     }
 
     public const string ExtraSectionCode = "PS";
-    private static readonly System.Text.RegularExpressions.Regex AppendixCode = new(@"^PL\d+(\.|$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    private static readonly System.Text.RegularExpressions.Regex AppendixCode = new(@"^PL\d+([.>]|$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
     public static bool IsAppendixItem(PdvtBoqItem item) =>
-        AppendixCode.IsMatch(item.IsHeading ? item.SttBoq : item.SectionCode);
+        AppendixCode.IsMatch(item.IsHeading ? (item.Path.Length > 0 ? item.Path : item.SttBoq) : item.SectionCode);
 
     /// <summary>
     /// Builds the summary lines for "phát sinh" materials that are not linked to a BoQ line, grouped under a "PS" heading.
@@ -159,7 +159,7 @@ public static class PdvtProgress
     }
 
     /// <summary>
-    /// Appends an appendix BoQ under a new top heading "PLn" and prefixes its section codes, so its
+    /// Appends an appendix BoQ under a new top heading "PLn". Its headings get the path "PLn>…", so its
     /// "I", "1.1"… cannot collide with the main BoQ. Returns the appended material lines.
     /// </summary>
     public static List<PdvtBoqItem> AppendAppendix(IList<PdvtBoqItem> boq, IEnumerable<PdvtBoqItem> imported, string label)
@@ -168,18 +168,22 @@ public static class PdvtProgress
         var code = $"PL{number}";
         while (boq.Any(x => x.IsHeading && string.Equals(x.SttBoq, code, StringComparison.OrdinalIgnoreCase))) code = $"PL{++number}";
 
-        boq.Add(new PdvtBoqItem { SttBoq = code, IsHeading = true, HeadingLevel = 1, NoiDung = $"PHỤ LỤC {number} · {label}" });
+        boq.Add(new PdvtBoqItem { SttBoq = code, Path = code, IsHeading = true, HeadingLevel = 1, NoiDung = $"PHỤ LỤC {number} · {label}" });
         var added = new List<PdvtBoqItem>();
         foreach (var item in imported)
         {
             if (item.IsHeading)
             {
+                // Items without a path come from older flat parses: their code is their path.
+                var path = item.Path.Length > 0 ? item.Path : item.SttBoq;
+                item.Path = $"{code}>{path}";
+                item.SectionCode = item.SectionCode.Length > 0 ? $"{code}>{item.SectionCode}" : code;
                 item.SttBoq = $"{code}.{item.SttBoq}";
                 item.HeadingLevel += 1;
             }
             else
             {
-                item.SectionCode = string.IsNullOrEmpty(item.SectionCode) ? code : $"{code}.{item.SectionCode}";
+                item.SectionCode = string.IsNullOrEmpty(item.SectionCode) ? code : $"{code}>{item.SectionCode}";
                 added.Add(item);
             }
             boq.Add(item);
@@ -205,8 +209,16 @@ public static class PdvtProgress
 
     public static bool IsInSection(PdvtBoqItem item, PdvtBoqItem heading)
     {
+        if (ReferenceEquals(item, heading)) return false;
+        if (heading.Path.Length > 0)
+        {
+            // Path-based BoQ: "C>I>I.1" lies inside "C" and "C>I", never inside another "I".
+            var own = item.IsHeading ? item.Path : item.SectionCode;
+            return (!item.IsHeading && string.Equals(own, heading.Path, StringComparison.OrdinalIgnoreCase)) ||
+                   own.StartsWith(heading.Path + ">", StringComparison.OrdinalIgnoreCase);
+        }
         var code = heading.SttBoq;
-        if (string.IsNullOrEmpty(code) || ReferenceEquals(item, heading)) return false;
+        if (string.IsNullOrEmpty(code) || item.Path.Length > 0) return false;
         return item.IsHeading
             ? item.SttBoq.StartsWith(code + ".", StringComparison.OrdinalIgnoreCase)
             : string.Equals(item.SectionCode, code, StringComparison.OrdinalIgnoreCase) ||
