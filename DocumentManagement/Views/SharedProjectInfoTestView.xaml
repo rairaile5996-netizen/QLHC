@@ -1,0 +1,377 @@
+<UserControl x:Class="DocumentManagement.Views.SharedProjectInfoTestView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:DocumentManagement.Converters"
+             FontFamily="{DynamicResource Blueprint.Font.Body}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <Style x:Key="FormLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource Blueprint.Font.Header}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        <Style x:Key="FormTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0,3"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+            <Setter Property="AcceptsReturn" Value="False"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="{DynamicResource Blueprint.Font.Body}"/>
+            <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility" Value="Collapsed"/>
+        </Style>
+        <Style x:Key="RepresentativeCellTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource Blueprint.Font.Body}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="8,0"/>
+        </Style>
+        <Style x:Key="RepresentativeCellEditorStyle" TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{DynamicResource Blueprint.Font.Body}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Blueprint.OnSurface}"/>
+        </Style>
+        <Style x:Key="RepresentativeColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="FontFamily" Value="{DynamicResource Blueprint.Font.Body}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+            <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainerHigh}"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style x:Key="FormFieldSurfaceStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Blueprint.Surface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="MinHeight" Value="38"/>
+        </Style>
+        <Style x:Key="CompactFieldSurfaceStyle" TargetType="Border" BasedOn="{StaticResource FormFieldSurfaceStyle}">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="MinHeight" Value="34"/>
+        </Style>
+        <converters:CollectionCountToScrollVisibilityConverter x:Key="CollectionScrollVisibilityConverter"/>
+    </UserControl.Resources>
+    <ScrollViewer x:Name="ProjectInfoScrollViewer"
+                  Loaded="ProjectInfoScrollViewer_Loaded"
+                  IsVisibleChanged="ProjectInfoScrollViewer_IsVisibleChanged"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  CanContentScroll="False"
+                  PanningMode="VerticalOnly">
+    <Grid>
+        <StackPanel VerticalAlignment="Top" Margin="0,4,0,24">
+            <!-- Chi giu phan thong tin du an va hop dong; danh sach dai dien ben duoi thay cho card cu. -->
+            <ContentControl Content="{Binding Info}">
+                <ContentControl.ContentTemplate>
+                    <DataTemplate>
+                        <Grid Margin="32,12,32,12" SizeChanged="InfoCards_SizeChanged">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2.2*"/>
+                                <ColumnDefinition Width="0.85*"/>
+                            </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="ProjectInfoCard" Grid.Column="0" Padding="22" Margin="0,0,12,0" CornerRadius="12"
+                                            Background="{DynamicResource Blueprint.SurfaceBright}"
+                                            BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                        <Border Background="#3B82F6" CornerRadius="4" Padding="8,4" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="City" Width="16" Height="16" Foreground="White"/>
+                                        </Border>
+                                        <TextBlock Text="THÔNG TIN DỰ ÁN" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="Black" Foreground="{DynamicResource Blueprint.OnSurface}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,9">
+                                        <TextBlock Text="DỰ ÁN" Style="{StaticResource FormLabelStyle}"/>
+                                        <Border Style="{StaticResource FormFieldSurfaceStyle}">
+                                            <TextBox Text="{Binding TenDuAn, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource FormTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,9">
+                                        <TextBlock Text="CÔNG TRÌNH" Style="{StaticResource FormLabelStyle}"/>
+                                        <Border Style="{StaticResource FormFieldSurfaceStyle}">
+                                            <TextBox Text="{Binding TenCongTrinh, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource FormTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,9">
+                                        <TextBlock Text="HẠNG MỤC / GÓI THẦU" Style="{StaticResource FormLabelStyle}"/>
+                                        <Border Style="{StaticResource FormFieldSurfaceStyle}">
+                                            <TextBox Text="{Binding TenHangMuc, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource FormTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="ĐỊA ĐIỂM XÂY DỰNG" Style="{StaticResource FormLabelStyle}"/>
+                                        <Border Style="{StaticResource FormFieldSurfaceStyle}">
+                                            <TextBox Text="{Binding DiaDiem, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource FormTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border x:Name="ContractInfoCard" Grid.Column="1" Padding="22" Margin="12,0,0,0" CornerRadius="12"
+                                    Background="{DynamicResource Blueprint.SurfaceBright}"
+                                    BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                        <Border Background="#F59E0B" CornerRadius="4" Padding="8,4" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="FileDocumentEdit" Width="16" Height="16" Foreground="White"/>
+                                        </Border>
+                                        <TextBlock Text="THÔNG TIN HỢP ĐỒNG" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="Black" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="SỐ HỢP ĐỒNG" Style="{StaticResource FormLabelStyle}"/>
+                                    <TextBlock Text="{Binding DisplayContractNumber}" Foreground="#3B82F6" FontSize="18" FontWeight="Black" Margin="0,2,0,12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="NGÀY KÝ KẾT" Style="{StaticResource FormLabelStyle}"/>
+                                    <TextBlock Text="{Binding DisplaySignDate}" Foreground="{DynamicResource Blueprint.OnSurface}" FontSize="15" FontWeight="SemiBold" Margin="0,2,0,12"/>
+                                    <TextBlock Text="BỘ TEMPLATE" Style="{StaticResource FormLabelStyle}"/>
+                                    <ComboBox ItemsSource="{Binding TemplateProfiles}" SelectedItem="{Binding TemplateProfile, UpdateSourceTrigger=PropertyChanged}" MinHeight="34"
+                                              Foreground="{DynamicResource Blueprint.OnSurface}"
+                                              materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ContentControl.ContentTemplate>
+            </ContentControl>
+
+            <Border Margin="32,0,32,0"
+                    Padding="18"
+                    CornerRadius="12"
+                    Background="{DynamicResource Blueprint.SurfaceBright}"
+                    BorderBrush="{DynamicResource Blueprint.Outline}"
+                    BorderThickness="1">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Background="#2563EB" CornerRadius="7" Padding="8" Margin="0,0,12,0">
+                            <materialDesign:PackIcon Kind="AccountTieOutline" Width="21" Height="21" Foreground="White"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="DANH SÁCH ĐẠI DIỆN &amp; NGƯỜI KÝ HSCL"
+                                       FontFamily="{DynamicResource Blueprint.Font.Header}"
+                                       FontSize="17" FontWeight="Black"
+                                       Foreground="{DynamicResource Blueprint.OnSurface}" TextWrapping="Wrap"/>
+                            <TextBlock Text="Khai báo các đại diện của từng bên, sau đó chọn người ký để dùng ngay khi xuất CVXD và VTĐV."
+                                       FontSize="12" Margin="0,4,0,0"
+                                       Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding Groups}" Loaded="RepresentativeCards_SizeChanged" SizeChanged="RepresentativeCards_SizeChanged">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="6" Padding="16"
+                                        CornerRadius="10"
+                                        Background="{DynamicResource Blueprint.Surface}"
+                                        BorderBrush="{DynamicResource Blueprint.Outline}"
+                                        BorderThickness="1"
+                                        IsEnabled="{Binding IsInputEnabled}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <Border Background="{Binding AccentColor}" CornerRadius="4" Padding="7,4" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="11" FontWeight="Black" Foreground="White"
+                                                               TextAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding LockMessage}"
+                                                           Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                           FontSize="10" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                                                           Margin="0,6,0,0"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1"
+                                                    Command="{Binding DataContext.AddRepresentativeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource SecondaryButtonStyle}" Padding="10,6">
+                                                <StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="Plus" Width="15" Height="15" Margin="0,0,5,0"/><TextBlock Text="Thêm người"/></StackPanel>
+                                            </Button>
+                                        </Grid>
+
+                                        <Grid Grid.Row="1" Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="92"/></Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,8,0">
+                                                <TextBlock Text="ĐƠN VỊ" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                                <Border Style="{StaticResource CompactFieldSurfaceStyle}" Margin="0,4,0,0">
+                                                    <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBoxStyle}" FontSize="12"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="KÝ HIỆU" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                                <Border Style="{StaticResource CompactFieldSurfaceStyle}" Margin="0,4,0,0">
+                                                    <TextBox Text="{Binding CompanyCode, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBoxStyle}" FontSize="12"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Grid Grid.Row="2" Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="MẪU" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <ComboBox Grid.Column="1" ItemsSource="{Binding LibraryProfiles}" SelectedItem="{Binding SelectedLibrary}"
+                                                      DisplayMemberPath="Name" MinHeight="31" Margin="0,0,6,0"
+                                                      ToolTip="Chọn danh sách mẫu đã lưu"
+                                                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"/>
+                                            <Button Grid.Column="2" Command="{Binding DataContext.LoadRepresentativeLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource SecondaryButtonStyle}" Padding="8,5" Margin="0,0,8,0" ToolTip="Nạp mẫu đã chọn">
+                                                <materialDesign:PackIcon Kind="DownloadOutline" Width="15" Height="15"/>
+                                            </Button>
+                                            <Border Grid.Column="3" Style="{StaticResource CompactFieldSurfaceStyle}" Margin="0,0,6,0">
+                                                <TextBox Text="{Binding LibraryName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBoxStyle}" FontSize="11"
+                                                         ToolTip="Nhập tên để lưu mẫu mới hoặc cập nhật mẫu đang chọn" materialDesign:HintAssist.Hint="Tên mẫu"/>
+                                            </Border>
+                                            <Button Grid.Column="4" Command="{Binding DataContext.SaveRepresentativeLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource SecondaryButtonStyle}" Padding="8,5" ToolTip="Lưu hoặc cập nhật mẫu">
+                                                <materialDesign:PackIcon Kind="ContentSaveOutline" Width="15" Height="15"/>
+                                            </Button>
+                                        </Grid>
+
+                                        <Grid Grid.Row="3">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                        <DataGrid ItemsSource="{Binding CurrentPageMembers}" AutoGenerateColumns="False"
+                                                  CanUserAddRows="False" HeadersVisibility="Column" RowHeaderWidth="0"
+                                                  Height="122" RowHeight="28" ColumnHeaderHeight="32"
+                                                  ColumnHeaderStyle="{StaticResource RepresentativeColumnHeaderStyle}"
+                                                  FontFamily="{DynamicResource Blueprint.Font.Body}" FontSize="12"
+                                                  VerticalContentAlignment="Center"
+                                                  Background="Transparent" BorderThickness="0"
+                                                  Foreground="{DynamicResource Blueprint.OnSurface}"
+                                                  GridLinesVisibility="Horizontal"
+                                                  HorizontalGridLinesBrush="{DynamicResource Blueprint.Outline}"
+                                                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                  AllowDrop="True"
+                                                  PreviewMouseLeftButtonDown="RepresentativesGrid_PreviewMouseLeftButtonDown"
+                                                  PreviewMouseWheel="RepresentativesGrid_PreviewMouseWheel"
+                                                  MouseMove="RepresentativesGrid_MouseMove"
+                                                  Drop="RepresentativesGrid_Drop">
+                                            <DataGrid.Columns>
+                                                <DataGridTemplateColumn Width="26" IsReadOnly="True">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <materialDesign:PackIcon Kind="DragVertical" Width="15" Height="15" Opacity="0.65" ToolTip="Kéo để đổi thứ tự"
+                                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="Họ và tên" Binding="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Width="*"
+                                                                    ElementStyle="{StaticResource RepresentativeCellTextStyle}"
+                                                                    EditingElementStyle="{StaticResource RepresentativeCellEditorStyle}"/>
+                                                <DataGridTextColumn Header="Chức vụ" Binding="{Binding Position, UpdateSourceTrigger=PropertyChanged}" Width="*"
+                                                                    ElementStyle="{StaticResource RepresentativeCellTextStyle}"
+                                                                    EditingElementStyle="{StaticResource RepresentativeCellEditorStyle}"/>
+                                                <DataGridTemplateColumn Width="34">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Command="{Binding DataContext.RemoveRepresentativeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}" ToolTip="Xóa" Style="{StaticResource MaterialDesignFlatButton}" Padding="3"
+                                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" Foreground="#EF4444"/>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+
+                                            <Grid Grid.Row="1" Margin="0,7,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding PageSummary}" FontSize="10"
+                                                           Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                                                           VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                    <Button Command="{Binding FirstPageCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                                            Padding="4" MinWidth="25" Height="25" ToolTip="Trang đầu">
+                                                        <materialDesign:PackIcon Kind="PageFirst" Width="15" Height="15"/>
+                                                    </Button>
+                                                    <Button Command="{Binding PreviousPageCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                                            Padding="4" MinWidth="25" Height="25" ToolTip="Trang trước">
+                                                        <materialDesign:PackIcon Kind="ChevronLeft" Width="15" Height="15"/>
+                                                    </Button>
+                                                    <Border MinWidth="28" Height="25" Margin="3,0" CornerRadius="4" Background="#2563EB">
+                                                        <TextBlock Text="{Binding CurrentPage}" Foreground="White" FontWeight="SemiBold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Button Command="{Binding NextPageCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                                            Padding="4" MinWidth="25" Height="25" ToolTip="Trang sau">
+                                                        <materialDesign:PackIcon Kind="ChevronRight" Width="15" Height="15"/>
+                                                    </Button>
+                                                    <Button Command="{Binding LastPageCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                                            Padding="4" MinWidth="25" Height="25" ToolTip="Trang cuối">
+                                                        <materialDesign:PackIcon Kind="PageLast" Width="15" Height="15"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+
+                                        <StackPanel Grid.Row="4" Margin="0,8,0,0">
+                                            <TextBlock Text="NGƯỜI KÝ HSCL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                            <ComboBox ItemsSource="{Binding Members}"
+                                                      SelectedItem="{Binding SelectedSigner, Mode=TwoWay}"
+                                                      DisplayMemberPath="FullName"
+                                                      Margin="0,4,0,0"
+                                                      MinHeight="30"
+                                                      MaxDropDownHeight="96"
+                                                      ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                                            <TextBlock Text="{Binding PlaceholderHint, StringFormat=Sẽ thay placeholder: \{0\}}"
+                                                       FontSize="10" Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+    </ScrollViewer>
+</UserControl>

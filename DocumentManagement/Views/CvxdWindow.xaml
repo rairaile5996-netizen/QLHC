@@ -1,0 +1,192 @@
+﻿<Window x:Class="DocumentManagement.Views.CvxdWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:views="clr-namespace:DocumentManagement.Views"
+        xmlns:utilities="clr-namespace:DocumentManagement.Utilities"
+        xmlns:updates="clr-namespace:DocumentManagement.Views.Updates"
+        Title="Hồ Sơ Nghiệm Thu - CVXD và VTĐV"
+        WindowState="Normal"
+        WindowStyle="SingleBorderWindow"
+        ResizeMode="CanResize"
+        AllowsTransparency="False"
+        Background="{DynamicResource Blueprint.Surface}"
+        FontFamily="Inter, Segoe UI">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="36"
+                      ResizeBorderThickness="6"
+                      CornerRadius="0"
+                      GlassFrameThickness="0"
+                      NonClientFrameEdges="None"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+
+    <Window.Resources>
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Styles/SharedStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
+
+    </Window.Resources>
+
+
+    <!-- ===================================================== -->
+    <!-- ROOT                                                  -->
+    <!-- ===================================================== -->
+
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+
+        <!-- ================================================= -->
+        <!-- TITLE BAR                                         -->
+        <!-- ================================================= -->
+
+        <Border Grid.Row="0"
+                Background="{DynamicResource Blueprint.SurfaceContainer}"
+                BorderBrush="{DynamicResource Blueprint.Outline}"
+                BorderThickness="0,0,0,1">
+
+            <Grid>
+
+
+                <!-- LEFT -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Margin="16,0">
+
+
+                    <!-- BACK -->
+                    <Button x:Name="BackButton"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            Width="36"
+                            Height="36"
+                            Padding="0"
+                            Click="BackButton_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True"
+                            ToolTip="Quay lại chọn module">
+
+                        <materialDesign:PackIcon
+                            Kind="ArrowLeft"
+                            Width="20"
+                            Height="20"
+                            Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+
+                    </Button>
+
+
+                    <!-- MODULE ICON -->
+                    <materialDesign:PackIcon
+                        Kind="ClipboardCheckOutline"
+                        Width="18"
+                        Height="18"
+                        Foreground="{DynamicResource Blueprint.Primary}"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"/>
+
+
+                    <!-- TITLE -->
+                    <TextBlock
+                        Text="HỒ SƠ NGHIỆM THU - CVXD và VTĐV"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource Blueprint.OnSurface}"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"/>
+
+
+                    <!-- VERSION -->
+                    <TextBlock
+                        Text="{x:Static utilities:AppVersionInfo.VersionLabel}"
+                        FontSize="10"
+                        Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                        Margin="10,0,0,0"
+                        VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+
+                <!-- RIGHT WINDOW CONTROLS -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+
+
+                    <!-- MINIMIZE -->
+                    <Button x:Name="MinimizeButton"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            Width="46"
+                            Height="36"
+                            Padding="0"
+                            Click="MinimizeButton_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+
+                        <materialDesign:PackIcon
+                            Kind="WindowMinimize"
+                            Width="16"
+                            Height="16"
+                            Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+
+                    </Button>
+
+
+                    <!-- CLOSE -->
+                    <Button x:Name="CloseButton"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            Width="46"
+                            Height="36"
+                            Padding="0"
+                            Click="CloseButton_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+
+                        <materialDesign:PackIcon
+                            Kind="Close"
+                            Width="16"
+                            Height="16"
+                            Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+
+                    </Button>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+
+        <!-- ================================================= -->
+        <!-- CONTENT AREA                                      -->
+        <!-- CvxdView tích hợp CVXD + VTĐV                     -->
+        <!-- ================================================= -->
+
+        <views:CvxdView Grid.Row="1"/>
+
+
+        <!-- ================================================= -->
+        <!-- UPDATE HOST                                       -->
+        <!-- NỔI TRÊN TOÀN BỘ CỬA SỔ                          -->
+        <!-- ================================================= -->
+
+        <updates:UpdateHostView
+            x:Name="UpdateHost"
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Margin="0,0,24,24"
+            Panel.ZIndex="1000"/>
+
+    </Grid>
+
+</Window>

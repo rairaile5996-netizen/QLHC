@@ -1,0 +1,473 @@
+<Window x:Class="DocumentManagement.AddEditDocumentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Thêm Hợp Đồng Mới" Height="580" Width="600"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/SharedStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="Button">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" 
+                                    Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    CornerRadius="8" 
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Opacity" Value="0.7"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <!-- Tab Button Style - no rounded corners, bottom border only -->
+            <Style x:Key="TabButtonStyle" TargetType="Button">
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" 
+                                    Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="ModernDatePicker" TargetType="DatePicker">
+                <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainer}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontFamily" Value="{StaticResource Blueprint.Font.Body}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="CalendarStyle">
+                    <Setter.Value>
+                        <Style TargetType="Calendar">
+                            <Setter Property="FontSize" Value="14"/>
+                            <Setter Property="Background" Value="{DynamicResource Blueprint.Surface}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+                            <Setter Property="LayoutTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="1.22" ScaleY="1.22"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="DatePicker">
+                            <Grid x:Name="PART_Root">
+                                <Border x:Name="border"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="36"/>
+                                        </Grid.ColumnDefinitions>
+                                        <DatePickerTextBox x:Name="PART_TextBox"
+                                                           Grid.Column="0"
+                                                           Background="Transparent"
+                                                           BorderThickness="0"
+                                                           Foreground="{TemplateBinding Foreground}"
+                                                           FontSize="{TemplateBinding FontSize}"
+                                                           FontFamily="{TemplateBinding FontFamily}"
+                                                           Padding="12,0,8,0"
+                                                           Height="40"
+                                                           VerticalContentAlignment="Center">
+                                            <DatePickerTextBox.Template>
+                                                <ControlTemplate TargetType="DatePickerTextBox">
+                                                    <Grid Background="Transparent">
+                                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                                      Focusable="False"
+                                                                      Background="Transparent"
+                                                                      HorizontalScrollBarVisibility="Hidden"
+                                                                      VerticalScrollBarVisibility="Hidden"
+                                                                      VerticalAlignment="Center"
+                                                                      Margin="{TemplateBinding Padding}"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </DatePickerTextBox.Template>
+                                        </DatePickerTextBox>
+                                        <Button x:Name="PART_Button"
+                                                Grid.Column="1"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Focusable="False"
+                                                Cursor="Hand"
+                                                Padding="0">
+                                            <materialDesign:PackIcon Kind="CalendarMonth"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{TemplateBinding Foreground}"
+                                                                     HorizontalAlignment="Center"
+                                                                     VerticalAlignment="Center"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
+                                       Placement="Bottom"
+                                       PlacementTarget="{Binding ElementName=PART_Root}"
+                                       StaysOpen="False"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                                    <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="border" Property="Opacity" Value="0.6"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Border x:Name="MainBorder" CornerRadius="12" Background="{DynamicResource Blueprint.Surface}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+        </Border.Effect>
+        <Grid Margin="28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <TextBlock x:Name="TitleText" Text="Thêm Hợp Đồng Mới" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                <Button HorizontalAlignment="Right" Width="32" Height="32" Background="Transparent" BorderThickness="0" Click="CloseButton_Click" Cursor="Hand">
+                    <materialDesign:PackIcon Kind="Close" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Width="20" Height="20"/>
+                </Button>
+            </Grid>
+            
+            <!-- Tab Headers -->
+            <Grid Grid.Row="1" Margin="0,0,0,20">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="TabManual" Content="Nhập thủ công" Click="TabManual_Click" Style="{StaticResource TabButtonStyle}"
+                            Background="Transparent" BorderThickness="0,0,0,2" BorderBrush="{DynamicResource Blueprint.Primary}" 
+                            Foreground="{DynamicResource Blueprint.OnSurface}" FontWeight="SemiBold" FontSize="14" Padding="0,8" Margin="0,0,24,0" Cursor="Hand"/>
+                    <Button x:Name="TabImport" Content="Nhập từ Excel" Click="TabImport_Click" Style="{StaticResource TabButtonStyle}"
+                            Background="Transparent" BorderThickness="0,0,0,2" BorderBrush="Transparent" 
+                            Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontWeight="Normal" FontSize="14" Padding="0,8" Margin="0,0,24,0" Cursor="Hand"/>
+                    <Button x:Name="TabAI" Content="🤖 Đọc bằng AI" Click="TabAI_Click" Style="{StaticResource TabButtonStyle}"
+                            Background="Transparent" BorderThickness="0,0,0,2" BorderBrush="Transparent" 
+                            Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontWeight="Normal" FontSize="14" Padding="0,8" Cursor="Hand"/>
+                </StackPanel>
+                <Border x:Name="TabSeparator" Height="1" Background="{DynamicResource Blueprint.Outline}" VerticalAlignment="Bottom"/>
+            </Grid>
+            
+            <!-- Tab Content: AI -->
+            <Grid x:Name="AIContent" Grid.Row="2" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Upload Files - Drop Zone -->
+                        <TextBlock Text="CHỌN FILE HỢP ĐỒNG (Word/Excel)" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                        <Border x:Name="DropZone" Height="100" Background="{DynamicResource Blueprint.SurfaceContainer}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="2" CornerRadius="8"
+                                AllowDrop="True" Drop="DropZone_Drop" DragEnter="DropZone_DragEnter" DragLeave="DropZone_DragLeave"
+                                MouseLeftButtonDown="DropZone_Click" Cursor="Hand">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <materialDesign:PackIcon x:Name="DropZoneIcon" Kind="FileDocumentPlus" Width="32" Height="32" Foreground="{DynamicResource Blueprint.Primary}" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="DropZoneText" Text="Kéo thả file vào đây hoặc bấm để chọn" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="13" Margin="0,8,0,0" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Hỗ trợ .docx và .xlsx; AI chỉ đọc nội dung file Word" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Opacity="0.7" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Selected Files List -->
+                        <ItemsControl x:Name="SelectedFilesListAI" Margin="0,12,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource Blueprint.SurfaceContainer}" CornerRadius="4" Padding="10,6" Margin="0,0,0,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <materialDesign:PackIcon Kind="FileDocument" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Primary}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding FileName}" Foreground="{DynamicResource Blueprint.OnSurface}" FontSize="13" Margin="8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <Button Grid.Column="2" Width="24" Height="24" Background="Transparent" BorderThickness="0" 
+                                                    Click="RemoveFile_Click" Tag="{Binding FilePath}" Cursor="Hand" ToolTip="Xóa file">
+                                                <materialDesign:PackIcon Kind="Close" Width="14" Height="14" Foreground="#EF4444"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        
+                        <!-- AI Read Button -->
+                        <Button x:Name="BtnReadWithAI" Click="BtnReadWithAI_Click" Height="44" Background="#10B981" BorderThickness="0" Cursor="Hand" Margin="0,16,0,0" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon x:Name="AIIcon" Kind="Robot" Width="20" Height="20" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="AIButtonText" Text="Đọc với AI" Foreground="White" FontSize="14" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <!-- AI Status -->
+                        <TextBlock x:Name="AIStatusText" Foreground="{DynamicResource Blueprint.Warning}" FontSize="13" Margin="0,12,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </ScrollViewer>
+                
+                <!-- Loading Overlay -->
+                <Border x:Name="LoadingOverlay" Background="{DynamicResource Blueprint.BusyOverlay}" Visibility="Collapsed">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Loading" Width="48" Height="48" Foreground="{DynamicResource Blueprint.Primary}" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                            <materialDesign:PackIcon.RenderTransform>
+                                <RotateTransform x:Name="SpinnerRotate" Angle="0"/>
+                            </materialDesign:PackIcon.RenderTransform>
+                            <materialDesign:PackIcon.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetName="SpinnerRotate" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </materialDesign:PackIcon.Triggers>
+                        </materialDesign:PackIcon>
+                        <TextBlock x:Name="LoadingText" Text="Đang đọc file Word và trích xuất thông tin..." Foreground="{DynamicResource Blueprint.OnSurface}" FontSize="14" Margin="0,16,0,0" HorizontalAlignment="Center" TextAlignment="Center"/>
+                        <TextBlock Text="Vui lòng chờ trong giây lát" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="12" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                        <Button x:Name="CancelAIButton" Content="Hủy" Click="CancelAI_Click" Background="#EF4444" Foreground="White" 
+                                Padding="24,8" Height="36" BorderThickness="0" Cursor="Hand" Margin="0,20,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            
+            <!-- Tab Content: Manual -->
+            <ScrollViewer x:Name="ManualContent" Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,0,16">
+                    <!-- AI Warning Banner -->
+                    <Border x:Name="AIWarningBanner" Background="{DynamicResource Blueprint.WarningContainer}" CornerRadius="8" Padding="12" Margin="0,0,0,16" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="AlertCircle" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Warning}" VerticalAlignment="Center"/>
+                            <TextBlock Text="⚠️ Dữ liệu đọc bởi AI. Khuyến nghị kiểm tra lại trước khi lưu." Foreground="{DynamicResource Blueprint.OnWarningContainer}" FontSize="13" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Form Grid with better spacing -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Row 0: Contract Number & Sign Date -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,16">
+                            <TextBlock Text="SỐ HỢP ĐỒNG *" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="ContractNumberBox" Style="{StaticResource ModernTextBox}" 
+                                     materialDesign:HintAssist.Hint="Ví dụ: 01/HĐ-2024"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,16">
+                            <TextBlock Text="NGÀY KÝ *" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <DatePicker x:Name="SignDatePicker" Style="{StaticResource ModernDatePicker}"
+                                        materialDesign:HintAssist.Hint="Chọn ngày ký hợp đồng"/>
+                        </StackPanel>
+                        
+                        <!-- Row 1: Project Name (Full Width) -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,16">
+                            <TextBlock Text="TÊN DỰ ÁN *" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="ProjectNameBox" Style="{StaticResource ModernTextBox}"
+                                     materialDesign:HintAssist.Hint="Nhập tên dự án đầy đủ"/>
+                        </StackPanel>
+
+                        <!-- Row 2: Construction Name (Full Width) -->
+                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,16">
+                            <TextBlock Text="TÊN CÔNG TRÌNH" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="ConstructionNameBox" Style="{StaticResource ModernTextBox}"
+                                     materialDesign:HintAssist.Hint="Tên công trình cụ thể (nếu có)"/>
+                        </StackPanel>
+                        
+                        <!-- Row 3: Item Name (Full Width) -->
+                        <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,16">
+                            <TextBlock Text="TÊN HẠNG MỤC" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="ItemNameBox" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <!-- Row 4: Location (Full Width) -->
+                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,16">
+                            <TextBlock Text="ĐỊA ĐIỂM XÂY DỰNG" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="LocationBox" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <!-- Row 5: Investor Name (Full Width) -->
+                        <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,16">
+                            <TextBlock Text="TÊN CHỦ ĐẦU TƯ" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="InvestorNameBox" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <!-- Row 6: Employer & Contractor -->
+                        <StackPanel Grid.Row="6" Grid.Column="0" Margin="0,0,0,16">
+                            <TextBlock Text="TÊN BÊN GIAO THẦU" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="EmployerNameBox" Style="{StaticResource ModernTextBox}"/>
+                            <TextBlock Text="KÝ HIỆU GIAO THẦU" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,8"/>
+                            <TextBox x:Name="EmployerCodeBox" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="6" Grid.Column="2" Margin="0,0,0,16">
+                            <TextBlock Text="TÊN BÊN NHẬN THẦU" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="ContractorNameBox" Style="{StaticResource ModernTextBox}"/>
+                            <TextBlock Text="KÝ HIỆU NHẬN THẦU" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,8"/>
+                            <TextBox x:Name="ContractorCodeBox" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <!-- Row 7: Contract Value & Planned Advance -->
+                        <StackPanel Grid.Row="7" Grid.Column="0" Margin="0,0,0,16">
+                            <TextBlock Text="GIÁ TRỊ HỢP ĐỒNG (VNĐ)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="ContractValueBox" Style="{StaticResource ModernTextBox}" HorizontalContentAlignment="Right" Text="0" GotFocus="ValueBox_GotFocus" LostFocus="ValueBox_LostFocus" PreviewTextInput="NumberValidationTextBox"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="7" Grid.Column="2" Margin="0,0,0,16">
+                            <TextBlock Text="SỐ TIỀN TẠM ỨNG DỰ KIẾN (VNĐ)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="PlannedAdvanceValueBox" Style="{StaticResource ModernTextBox}" HorizontalContentAlignment="Right" Text="0" GotFocus="ValueBox_GotFocus" LostFocus="ValueBox_LostFocus" PreviewTextInput="NumberValidationTextBox"/>
+                        </StackPanel>
+
+                        <!-- Row 8: IsCompleted Checkbox -->
+                        <CheckBox x:Name="IsCompletedCheckBox" Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,4,0,0" VerticalContentAlignment="Center">
+                            <TextBlock Text="Hợp đồng đã hoàn thành (Xong hồ sơ)" Foreground="{DynamicResource Blueprint.OnSurface}" FontSize="14" Margin="8,0,0,0"/>
+                        </CheckBox>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+            
+            <!-- Tab Content: Import -->
+            <Grid x:Name="ImportContent" Grid.Row="2" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Upload Button -->
+                        <Button x:Name="BtnUploadFile" Click="BtnUploadFile_Click" Height="48" Background="#3B82F6" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Margin="16,0">
+                                <materialDesign:PackIcon Kind="Upload" Width="20" Height="20" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="Tải file Excel lên" Foreground="White" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <!-- Instructions Box -->
+                        <Border Background="{DynamicResource Blueprint.SurfaceContainer}" CornerRadius="8" Padding="20" Margin="0,20,0,0" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Hướng dẫn Import" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource Blueprint.OnSurface}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Tạo file Excel với các cột theo thứ tự sau:" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="13" Margin="0,0,0,12"/>
+                                
+                                <!-- Sample Table -->
+                                <Border BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <!-- Header Row -->
+                                        <Grid Grid.Row="0" Background="#3B82F6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="35"/>
+                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="75"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="STT" Foreground="White" FontSize="11" Padding="4,6" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="1" Text="Số HĐ" Foreground="White" FontSize="11" Padding="4,6" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="2" Text="Tên dự án" Foreground="White" FontSize="11" Padding="4,6" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="3" Text="Hạng mục" Foreground="White" FontSize="11" Padding="4,6" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="4" Text="Ngày ký" Foreground="White" FontSize="11" Padding="4,6" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="5" Text="Giá trị" Foreground="White" FontSize="11" Padding="4,6" FontWeight="SemiBold"/>
+                                        </Grid>
+                                        <!-- Sample Data Row -->
+                                        <Grid Grid.Row="1" Background="{DynamicResource Blueprint.Surface}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="35"/>
+                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="75"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="1" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="11" Padding="4,6"/>
+                                            <TextBlock Grid.Column="1" Text="01/HĐ" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="11" Padding="4,6"/>
+                                            <TextBlock Grid.Column="2" Text="Dự án A" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="11" Padding="4,6"/>
+                                            <TextBlock Grid.Column="3" Text="Hạng mục 1" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="11" Padding="4,6"/>
+                                            <TextBlock Grid.Column="4" Text="01/01/2025" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="11" Padding="4,6"/>
+                                            <TextBlock Grid.Column="5" Text="1,000,000" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="11" Padding="4,6"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                                
+                                <TextBlock Text="• Hợp đồng đã tồn tại sẽ được bỏ qua" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="12" Margin="0,0,0,4"/>
+                                <TextBlock Text="• Bắt đầu nhập dữ liệu từ dòng 2 (dòng 1 là header)" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="12"/>
+                                
+                                <!-- Download Template Button -->
+                                <Button Click="BtnDownloadTemplate_Click" Background="Transparent" BorderThickness="0" HorizontalAlignment="Left" Margin="0,16,0,0" Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Download" Width="16" Height="16" Foreground="#3B82F6" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Tải file mẫu" Foreground="#3B82F6" FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center" TextDecorations="Underline"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Import Result -->
+                        <TextBlock x:Name="ImportResultText" Foreground="#10B981" FontSize="13" Margin="0,16,0,0" Visibility="Collapsed"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+            
+            <!-- Footer -->
+            <Grid Grid.Row="3" Margin="0,24,0,0">
+                <Button x:Name="BtnAutoFillAI" Content="🤖 Đọc AI (1.INPUT)" Click="BtnAutoFillAI_Click" HorizontalAlignment="Left" Background="#10B981" Foreground="White" Padding="20,12" Height="44" BorderThickness="0" Cursor="Hand" Visibility="Collapsed" ToolTip="Tự động trích xuất các trường trống từ file Word trong thư mục 1.INPUT"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="CancelButton" Content="Hủy bỏ" Background="Transparent" Foreground="#94A3B8" Padding="20,12" Height="44" BorderThickness="0" Click="CancelButton_Click" Cursor="Hand"/>
+                    <Button x:Name="SaveButton" Content="Lưu Thay Đổi" Background="#3B82F6" Foreground="White" Padding="28,12" Height="44" MinWidth="140" BorderThickness="0" Click="SaveButton_Click" Cursor="Hand"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

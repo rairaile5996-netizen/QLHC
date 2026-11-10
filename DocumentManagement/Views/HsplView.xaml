@@ -1,0 +1,131 @@
+<UserControl x:Class="DocumentManagement.Views.HsplView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:utilities="clr-namespace:DocumentManagement.Utilities"
+              Background="{DynamicResource Blueprint.Surface}"
+              TextElement.Foreground="{DynamicResource Blueprint.OnSurface}" FontFamily="Segoe UI"
+              SizeChanged="HsplView_SizeChanged"
+              PreviewKeyDown="OnPreviewKeyDown">
+    <UserControl.InputBindings>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveDataCommand}"/>
+    </UserControl.InputBindings>
+    <UserControl.Resources>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainerHigh}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Padding" Value="10,7"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/><Setter Property="BorderThickness" Value="0,0,0,1"/>
+        </Style>
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="{DynamicResource Blueprint.Surface}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/><Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource Blueprint.Selection}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/></Trigger></Style.Triggers>
+        </Style>
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="10,5"/><Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Style.Triggers><DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True"><Setter Property="Background" Value="{DynamicResource Blueprint.Selection}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/></DataTrigger></Style.Triggers>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource Blueprint.Surface}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/><Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style x:Key="HsplPagerButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Padding" Value="9,3"/><Setter Property="Margin" Value="2,0"/><Setter Property="MinWidth" Value="28"/>
+            <Style.Triggers><DataTrigger Binding="{Binding IsCurrent}" Value="True"><Setter Property="Background" Value="{DynamicResource Blueprint.Primary}"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/><Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.PrimaryHover}"/><Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.PrimaryPressed}"/></DataTrigger></Style.Triggers>
+        </Style>
+        <BooleanToVisibilityConverter x:Key="HsplBoolToVisibilityConverter"/>
+    </UserControl.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions><RowDefinition Height="64"/><RowDefinition Height="16"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <Border Grid.Row="0" Background="{DynamicResource Blueprint.Surface}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="0,0,0,1" Padding="0,0,0,16">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="40" Height="40" CornerRadius="8" Background="{DynamicResource Blueprint.PrimaryContainer}" Margin="0,0,14,0"><materialDesign:PackIcon Kind="OfficeBuildingOutline" Width="26" Height="26" Foreground="{DynamicResource Blueprint.Focus}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                    <StackPanel><TextBlock Text="TẠO HỒ SƠ PHÁP LÝ" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Tạo hồ sơ nhanh - Chính xác - Chuẩn biểu mẫu" FontSize="12" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,3,0,0"/></StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="2">
+        <Grid x:Name="ContentLayout">
+            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="16"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="3*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="300"/></Grid.ColumnDefinitions>
+            <ScrollViewer Grid.Column="0" Grid.Row="0" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
+            <Grid x:Name="MainColumn">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel x:Name="CompactListTabs" Grid.Row="0" Grid.ColumnSpan="3" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,0,8">
+                    <Button x:Name="PersonnelTabButton" Content="Ban chỉ huy" Click="PersonnelTab_Click" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0"/>
+                    <Button x:Name="WorkersTabButton" Content="Công nhân" Click="WorkersTab_Click" Style="{StaticResource SecondaryButtonStyle}"/>
+                </StackPanel>
+                <Border x:Name="PersonnelPanel" Grid.Row="1" Background="{DynamicResource Blueprint.SurfaceContainer}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" CornerRadius="8" Padding="16">
+                    <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="AccountGroupOutline" Width="23" Height="23" Foreground="{DynamicResource Blueprint.Focus}" Margin="0,0,10,0"/><TextBlock Text="BAN CHỈ HUY / BAN ATLĐ" FontSize="16" FontWeight="SemiBold"/></StackPanel>
+                        <Grid Grid.Row="1" Margin="0,8,0,4">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <WrapPanel Orientation="Horizontal">
+                            <TextBlock Text="Chỉ huy trưởng" VerticalAlignment="Center" Margin="0,0,10,0"/><ComboBox Width="170" ItemsSource="{Binding Personnel}" SelectedItem="{Binding Commander}" DisplayMemberPath="FullName"/>
+                            <TextBlock Text="Trưởng ban ATLĐ" VerticalAlignment="Center" Margin="22,0,10,0"/><ComboBox Width="170" ItemsSource="{Binding Personnel}" SelectedItem="{Binding AtldHead}" DisplayMemberPath="FullName"/>
+                            </WrapPanel>
+                            <Button Grid.Row="1" HorizontalAlignment="Right" Command="{Binding AddPersonCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="14,7" Margin="0,6,0,0"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0"/><TextBlock Text="Thêm thành viên"/></StackPanel></Button>
+                        </Grid>
+                        <DataGrid x:Name="PersonnelGrid" Grid.Row="2" MinHeight="80" VerticalAlignment="Stretch" Background="{DynamicResource Blueprint.Surface}" ItemsSource="{Binding PersonnelPage}" SelectedItem="{Binding SelectedPerson}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeight="32" ColumnHeaderHeight="32" SizeChanged="ListGrid_SizeChanged" ScrollViewer.CanContentScroll="False" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns><DataGridTextColumn Header="STT" Width="60" Binding="{Binding RowNumber}"/><DataGridTextColumn Header="Họ và tên" Width="1.2*" Binding="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"/><DataGridTextColumn Header="Chức vụ" Width="1.3*" Binding="{Binding Position, UpdateSourceTrigger=PropertyChanged}"/><DataGridTemplateColumn Header="Báo cáo cho" Width="1.2*"><DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.Personnel, RelativeSource={RelativeSource AncestorType=DataGrid}}" DisplayMemberPath="FullName" SelectedValuePath="Id" SelectedValue="{Binding ReportsToId, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn><DataGridTemplateColumn Header="" Width="48"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Command="{Binding DataContext.RemovePersonCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6" ToolTip="Xóa" AutomationProperties.Name="Xóa" Style="{StaticResource DangerIconButtonStyle}"><materialDesign:PackIcon Kind="DeleteOutline" Width="17" Height="17"/></Button></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn></DataGrid.Columns>
+                        </DataGrid>
+                        <Grid Grid.Row="3" Margin="0,10,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel><TextBlock Text="{Binding PersonnelPageSummary}" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/><StackPanel Orientation="Horizontal" Margin="0,9,0,0"><ComboBox Width="155" ItemsSource="{Binding PersonnelLibraries}" SelectedItem="{Binding SelectedPersonnelLibrary}" DisplayMemberPath="Name" ToolTip="Mẫu Ban chỉ huy đã lưu"/><Button Command="{Binding LoadPersonnelLibraryCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,12,0" Padding="11,5"><TextBlock Text="Nạp mẫu"/></Button><TextBox Width="145" Text="{Binding PersonnelLibraryName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Tên mẫu, ví dụ Khánh Hưng"/><Button Command="{Binding SavePersonnelLibraryCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Padding="11,5"><TextBlock Text="Lưu mẫu BCH"/></Button></StackPanel></StackPanel><StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,0,0"><Button Command="{Binding FirstPersonnelPageCommand}" Content="«" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang đầu"/><Button Command="{Binding PreviousPersonnelPageCommand}" Content="‹" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang trước"/><ItemsControl ItemsSource="{Binding PersonnelPages}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Label}" Command="{Binding DataContext.GoToPersonnelPageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding PageNumber}" IsEnabled="{Binding IsEllipsis, Converter={StaticResource InverseBoolConverter}}" Style="{StaticResource HsplPagerButtonStyle}"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><Button Command="{Binding NextPersonnelPageCommand}" Content="›" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang sau"/><Button Command="{Binding LastPersonnelPageCommand}" Content="»" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang cuối"/></StackPanel></Grid>
+                    </Grid>
+                </Border>
+                <Border x:Name="WorkersPanel" Grid.Row="1" Grid.Column="2" Background="{DynamicResource Blueprint.SurfaceContainer}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" CornerRadius="8" Padding="16">
+                    <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <StackPanel><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><materialDesign:PackIcon Kind="HardHat" Width="23" Height="23" Foreground="{DynamicResource Blueprint.Focus}" Margin="0,0,10,0"/><StackPanel><TextBlock Text="DANH SÁCH CÔNG NHÂN" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Nạp Excel theo mẫu có sẵn để tạo nhanh danh sách." FontSize="11" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,3,0,0"/></StackPanel></StackPanel><Grid Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="Xuất CCAT:" VerticalAlignment="Center" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,0,8,0"/><TextBox Width="48" Height="32" Text="{Binding WorkerCountForCcat, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip="Lấy công nhân từ dòng 1 đến số này"/><TextBlock Text="người đầu" VerticalAlignment="Center" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="8,0,0,0"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"><Button Command="{Binding ImportWorkersFromExcelCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="14,7" Margin="0,0,8,0"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="MicrosoftExcel" Margin="0,0,6,0"/><TextBlock Text="Nạp từ Excel"/></StackPanel></Button><Button Command="{Binding AddWorkerCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="14,7"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0"/><TextBlock Text="Thêm công nhân"/></StackPanel></Button></StackPanel></Grid></StackPanel>
+                        <DataGrid x:Name="WorkersGrid" Grid.Row="1" MinHeight="80" VerticalAlignment="Stretch" Background="{DynamicResource Blueprint.Surface}" Margin="0,12,0,0" ItemsSource="{Binding WorkersPage}" SelectedItem="{Binding SelectedWorker}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeight="32" ColumnHeaderHeight="32" SizeChanged="ListGrid_SizeChanged" ScrollViewer.CanContentScroll="False" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns><DataGridTextColumn Header="STT" Width="60" Binding="{Binding RowNumber}"/><DataGridTextColumn Header="Họ và tên" Width="1.3*" Binding="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"/><DataGridTextColumn Header="Chức vụ / Nghề" Width="1.5*" Binding="{Binding Position, UpdateSourceTrigger=PropertyChanged}"/><DataGridTemplateColumn Header="Ngày sinh" Width="1.1*"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding DateOfBirth, StringFormat=dd/MM/yyyy}"/></DataTemplate></DataGridTemplateColumn.CellTemplate><DataGridTemplateColumn.CellEditingTemplate><DataTemplate><DatePicker SelectedDate="{Binding DateOfBirth, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate></DataGridTemplateColumn><DataGridTemplateColumn Header="" Width="48"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Command="{Binding DataContext.RemoveWorkerCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6" ToolTip="Xóa" AutomationProperties.Name="Xóa" Style="{StaticResource DangerIconButtonStyle}"><materialDesign:PackIcon Kind="DeleteOutline" Width="17" Height="17"/></Button></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn></DataGrid.Columns>
+                        </DataGrid>
+                        <Grid Grid.Row="2" Margin="0,10,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel><TextBlock Text="{Binding WorkersPageSummary}" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/><StackPanel Orientation="Horizontal" Margin="0,9,0,0"><ComboBox Width="155" ItemsSource="{Binding WorkerLibraries}" SelectedItem="{Binding SelectedWorkerLibrary}" DisplayMemberPath="Name" ToolTip="Mẫu công nhân đã lưu"/><Button Command="{Binding LoadWorkerLibraryCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,12,0" Padding="11,5"><TextBlock Text="Nạp mẫu"/></Button><TextBox Width="145" Text="{Binding WorkerLibraryName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Tên mẫu, ví dụ Khánh Hưng"/><Button Command="{Binding SaveWorkerLibraryCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Padding="11,5"><TextBlock Text="Lưu mẫu CN"/></Button></StackPanel></StackPanel><StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,0,0"><Button Command="{Binding FirstWorkersPageCommand}" Content="«" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang đầu"/><Button Command="{Binding PreviousWorkersPageCommand}" Content="‹" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang trước"/><ItemsControl ItemsSource="{Binding WorkersPages}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Label}" Command="{Binding DataContext.GoToWorkersPageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding PageNumber}" IsEnabled="{Binding IsEllipsis, Converter={StaticResource InverseBoolConverter}}" Style="{StaticResource HsplPagerButtonStyle}"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><Button Command="{Binding NextWorkersPageCommand}" Content="›" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang sau"/><Button Command="{Binding LastWorkersPageCommand}" Content="»" Style="{StaticResource SecondaryButtonStyle}" Padding="9,3" ToolTip="Trang cuối"/></StackPanel></Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+            </ScrollViewer>
+
+            <Border x:Name="CreatePanel" Grid.Column="2" Grid.Row="0" Background="{DynamicResource Blueprint.SurfaceContainer}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" CornerRadius="8" Padding="12">
+                <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <StackPanel><TextBlock Text="TẠO HỒ SƠ" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="Chọn hồ sơ và tạo tự động" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,3,0,0"/><Grid Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="NGÀY LẬP HỒ SƠ" FontSize="11" Margin="0,0,0,3" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/><DatePicker SelectedDate="{Binding DocumentDate, UpdateSourceTrigger=PropertyChanged}" Height="28"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="NGÀY KHỞI CÔNG" FontSize="11" Margin="0,0,0,3" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/><DatePicker SelectedDate="{Binding ConstructionStartDate, UpdateSourceTrigger=PropertyChanged}" Height="28" ToolTip="Để trống nếu chưa xác định ngày khởi công"/></StackPanel></Grid></StackPanel>
+                    <Grid Grid.Row="1" Margin="0,10,0,5"><TextBlock Text="HỒ SƠ CẦN TẠO" FontSize="13"/><TextBlock Text="{Binding SelectedTypesSummary}" HorizontalAlignment="Right" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/></Grid>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding DocumentTypes}">
+                        <ItemsControl.ItemTemplate><DataTemplate><Border Padding="8,3" Margin="0,0,0,4" CornerRadius="7"><Border.Style><Style TargetType="Border"><Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/><Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/><Setter Property="BorderThickness" Value="1"/><Style.Triggers><DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource Blueprint.Selection}"/><Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/></DataTrigger></Style.Triggers></Style></Border.Style><CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"><StackPanel><TextBlock Text="{Binding Code}" FontSize="13" FontWeight="SemiBold"/><TextBlock Text="{Binding Name}" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="11" Margin="0,1,0,0" TextWrapping="Wrap"/></StackPanel></CheckBox></Border></DataTemplate></ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                        <Expander Header="Trạng thái dữ liệu" Margin="0,0,0,6">
+                            <StackPanel Margin="0,6,0,0">
+                                <TextBlock Text="{Binding PersonnelStatusText}" Foreground="{Binding PersonnelStatusBrush}" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding WorkersStatusText}" Foreground="{Binding WorkersStatusBrush}" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding CcatStatusText}" Foreground="{Binding CcatStatusBrush}" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding SelectedTypesStatusText}" Foreground="{Binding SelectedTypesStatusBrush}"/>
+                            </StackPanel>
+                        </Expander>
+                        <Button Command="{Binding SaveDataCommand}" Style="{StaticResource SecondaryButtonStyle}" Height="32" Margin="0,0,0,5" ToolTip="Lưu dữ liệu HSPL (Ctrl+S)"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="ContentSaveOutline" Margin="0,0,8,0"/><TextBlock Text="LƯU DỮ LIỆU" FontWeight="SemiBold"/></StackPanel></Button>
+                        <Button Command="{Binding ExportCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="36"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="FileExportOutline" Margin="0,0,8,0"/><TextBlock Text="{Binding CreateButtonLabel}" FontWeight="SemiBold"/></StackPanel></Button>
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+        </Grid>
+        <TextBlock Grid.Row="3" Text="ⓘ  Dữ liệu được lưu riêng theo từng hợp đồng và chỉ hiển thị cho bạn." Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,16,0,0"/>
+        <Border Grid.RowSpan="4" Panel.ZIndex="10" Background="{DynamicResource Blueprint.BusyOverlay}" Visibility="{Binding IsLoading, Converter={StaticResource HsplBoolToVisibilityConverter}}">
+            <Border Width="360" Padding="22" Background="{DynamicResource Blueprint.SurfaceBright}" BorderBrush="{DynamicResource Blueprint.Primary}" BorderThickness="1" CornerRadius="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="40" Height="40" CornerRadius="8" Background="{DynamicResource Blueprint.PrimaryContainer}" Margin="0,0,12,0"><materialDesign:PackIcon Kind="CloudSyncOutline" Width="23" Height="23" Foreground="{DynamicResource Blueprint.Focus}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="ĐANG NẠP DANH SÁCH" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Vui lòng chờ, giao diện vẫn đang xử lý dữ liệu." Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" FontSize="12" Margin="0,3,0,0"/></StackPanel>
+                    </StackPanel>
+                    <TextBlock Text="{Binding LoadingMessage}" Foreground="{DynamicResource Blueprint.OnSurface}" TextWrapping="Wrap" Margin="0,18,0,10"/>
+                    <ProgressBar Height="5" IsIndeterminate="True" Foreground="#3B82F6" Background="{DynamicResource Blueprint.Surface}" BorderThickness="0"/>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>
+

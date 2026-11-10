@@ -1,0 +1,34 @@
+<Window x:Class="DocumentManagement.Views.FindReplaceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Tìm và thay thế" Width="430" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="None"
+        AllowsTransparency="True" Background="Transparent" ShowInTaskbar="False"
+        Foreground="{DynamicResource Blueprint.OnSurface}">
+    <Border Background="{DynamicResource Blueprint.SurfaceBright}" Padding="0" CornerRadius="12" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" ClipToBounds="True">
+        <StackPanel>
+            <Border Background="{DynamicResource Blueprint.SurfaceContainerHigh}" CornerRadius="11,11,0,0" Height="44" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid>
+                    <TextBlock Text="Tìm và thay thế" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="18,0,0,0"/>
+                    <Button Content="×" Click="Close_Click" HorizontalAlignment="Right" Width="44" Height="44" Padding="0" FontSize="22" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                </Grid>
+            </Border>
+            <StackPanel Margin="22">
+            <TextBlock Text="TÌM VÀ THAY THẾ" FontSize="16" FontWeight="Bold" Margin="0,0,0,16"/>
+            <TextBlock Text="Tìm nội dung" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,0,0,5"/>
+            <TextBox x:Name="FindBox" Height="36" Padding="10,6" Margin="0,0,0,12"
+                     Background="{DynamicResource Blueprint.SurfaceContainer}" Foreground="{DynamicResource Blueprint.OnSurface}"/>
+            <TextBlock Text="Thay bằng" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,0,0,5"/>
+            <TextBox x:Name="ReplaceBox" Height="36" Padding="10,6" Margin="0,0,0,16"
+                     Background="{DynamicResource Blueprint.SurfaceContainer}" Foreground="{DynamicResource Blueprint.OnSurface}"/>
+            <TextBlock x:Name="ResultText" Text="Nhập nội dung cần tìm để bắt đầu." Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,0,0,16" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Đóng" Click="Close_Click" Margin="0,0,8,0" Padding="16,8"/>
+                <Button Content="Tìm" Click="Find_Click" Margin="0,0,8,0" Padding="16,8"/>
+                <Button Content="Thay thế" Click="ReplaceNext_Click" Margin="0,0,8,0" Padding="16,8"/>
+                <Button Content="Thay tất cả" Click="ReplaceAll_Click" Padding="16,8" Background="{DynamicResource Blueprint.Primary}" Foreground="{DynamicResource Blueprint.OnPrimary}"/>
+            </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

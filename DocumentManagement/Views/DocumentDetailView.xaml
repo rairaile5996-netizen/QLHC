@@ -1,0 +1,1295 @@
+<UserControl x:Class="DocumentManagement.Views.DocumentDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:DocumentManagement.Converters"
+             xmlns:views="clr-namespace:DocumentManagement.Views"
+             xmlns:utilities="clr-namespace:DocumentManagement.Utilities"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1000"
+             FontFamily="Inter, Segoe UI"
+             SizeChanged="DocumentDetailView_SizeChanged">
+
+    <UserControl.Resources>
+        <Style x:Key="DetailNavigationTabStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="TabSurface" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,2">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabSurface" Property="Background" Value="{DynamicResource Blueprint.SurfaceContainerHigh}"/></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="TabSurface" Property="Background" Value="{DynamicResource Blueprint.PrimaryContainer}"/><Setter TargetName="TabSurface" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="TabSurface" Property="Background" Value="{DynamicResource Blueprint.Selection}"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="TabSurface" Property="Opacity" Value="0.5"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <Grid x:Name="DetailPanel" Background="Transparent" AllowDrop="True" Drop="DetailPanel_Drop">
+        <Grid.Style>
+            <Style TargetType="Grid">
+                <Style.Triggers>
+                    <Trigger Property="Visibility" Value="Visible">
+                        <Trigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25"/>
+                                    <ThicknessAnimation Storyboard.TargetProperty="Margin" From="20,0,0,0" To="0" Duration="0:0:0.25">
+                                        <ThicknessAnimation.EasingFunction>
+                                            <QuadraticEase EasingMode="EaseOut"/>
+                                        </ThicknessAnimation.EasingFunction>
+                                    </ThicknessAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </Trigger.EnterActions>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </Grid.Style>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Margin="24,12,24,0" BorderBrush="{Binding BorderColor}" BorderThickness="0,0,0,1">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" 
+                          PanningMode="HorizontalOnly">
+                <StackPanel Orientation="Horizontal">
+                    <!-- Tab 0: Tổng Hợp -->
+                    <Button Style="{StaticResource DetailNavigationTabStyle}" Command="{Binding SetDetailTabCommand}" CommandParameter="0" AutomationProperties.Name="Tổng hợp" BorderBrush="{Binding DetailTabIndex, Converter={StaticResource TabBorderConverter}, ConverterParameter=0}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ChartBox" Width="16" Height="16" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=0}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Tổng hợp" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" FontWeight="Medium" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=0}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Tab 1: HĐ + Phụ Lục -->
+                    <Button Style="{StaticResource DetailNavigationTabStyle}" Command="{Binding SetDetailTabCommand}" CommandParameter="1" AutomationProperties.Name="Hợp đồng và phụ lục" BorderBrush="{Binding DetailTabIndex, Converter={StaticResource TabBorderConverter}, ConverterParameter=1}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FileDocumentOutline" Width="16" Height="16" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=1}" VerticalAlignment="Center"/>
+                            <TextBlock Text="HĐ / Phụ lục" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" FontWeight="Medium" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=1}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Tab 2: Tạm ứng & thanh quyết toán -->
+                    <Button Style="{StaticResource DetailNavigationTabStyle}" Command="{Binding SetDetailTabCommand}" ToolTip="Tạm ứng, thanh toán và quyết toán" CommandParameter="2" AutomationProperties.Name="Tạm ứng, thanh toán và quyết toán" BorderBrush="{Binding DetailTabIndex, Converter={StaticResource TabBorderConverter}, ConverterParameter=2}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CashMultiple" Width="16" Height="16" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=2}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Tạm ứng / Thanh toán" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" FontWeight="Medium" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=2}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Tab 3: Thành phần hồ sơ -->
+                    <Button Style="{StaticResource DetailNavigationTabStyle}" Command="{Binding SetDetailTabCommand}" CommandParameter="3" AutomationProperties.Name="Thành phần hồ sơ" BorderBrush="{Binding DetailTabIndex, Converter={StaticResource TabBorderConverter}, ConverterParameter=3}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="16" Height="16" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=3}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Thành phần hồ sơ" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" FontWeight="Medium" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=3}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Tab 4: Hồ sơ & Tài liệu -->
+                    <Button Style="{StaticResource DetailNavigationTabStyle}" Command="{Binding SetDetailTabCommand}" CommandParameter="4" AutomationProperties.Name="Tài liệu" BorderBrush="{Binding DetailTabIndex, Converter={StaticResource TabBorderConverter}, ConverterParameter=4}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FolderOpen" Width="16" Height="16" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=4}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Tài liệu" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" FontWeight="Medium" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=4}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource DetailNavigationTabStyle}" Command="{Binding SetDetailTabCommand}" CommandParameter="5" AutomationProperties.Name="Thư bảo lãnh" BorderBrush="{Binding DetailTabIndex, Converter={StaticResource TabBorderConverter}, ConverterParameter=5}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ShieldOutline" Width="16" Height="16" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=5}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Thư bảo lãnh" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" FontWeight="Medium" Foreground="{Binding DetailTabIndex, Converter={StaticResource TabForegroundConverter}, ConverterParameter=5}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+          
+        </Border>
+        
+        <!-- PLACEHOLDERS FOR TABS -->
+        <!-- Tab 3: Thành phần hồ sơ -->
+        <Grid Grid.Row="1" Margin="24,16,24,24" Visibility="{Binding DetailTabIndex, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=3}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid x:Name="ChecklistHeader" Grid.Row="0" Margin="0,0,0,14">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid x:Name="ChecklistHeading">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Border Width="40" Height="40" CornerRadius="8" Background="#2563EB" Margin="0,0,12,0">
+                        <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="22" Height="22" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Thành phần hồ sơ ban đầu" FontSize="16" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}"/>
+                        <TextBlock FontSize="12" Foreground="{Binding TextSecondaryColor}" TextWrapping="Wrap">
+                            <Run Text="Đã đủ: "/><Run Text="{Binding InitialChecklistProgressText, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="  |  Còn thiếu: "/><Run Text="{Binding InitialChecklistMissingText, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+                <Button x:Name="ChecklistSaveButton" Grid.Column="1" AutomationProperties.Name="Lưu thành phần hồ sơ" Command="{Binding SaveInitialDocumentChecklistCommand}" Style="{StaticResource PrimaryButtonStyle}" Padding="14,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" Width="17" Height="17" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        <TextBlock Text="Lưu thành phần hồ sơ" Margin="8,0,0,0" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding InitialDocumentChecklist}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      RowHeight="48"
+                      Background="{Binding BackgroundColor}"
+                      Foreground="{Binding TextPrimaryColor}"
+                      BorderBrush="{Binding BorderColor}"
+                      BorderThickness="1"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Hồ sơ" Binding="{Binding Name}" Width="220" IsReadOnly="True"/>
+                    <DataGridTemplateColumn Header="Trạng thái" Width="150">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.InitialChecklistStatuses, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          SelectedItem="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
+                                          Background="{Binding DataContext.CardBackgroundColor, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          BorderBrush="{Binding DataContext.BorderColor, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          Padding="8,4"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="*" MinWidth="260"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Tab 4: Hồ sơ & Tài liệu -->
+        <Grid Grid.Row="1" Margin="24,16,24,24" Visibility="{Binding DetailTabIndex, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=4}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                                <materialDesign:PackIcon Kind="Folder" Width="18" Height="18" Foreground="{Binding TextSecondaryColor}"/>
+                                <TextBlock Text="{Binding SelectedDocument.FolderPath, TargetNullValue=Chưa liên kết thư mục}" Foreground="{Binding TextSecondaryColor}" FontSize="11" Margin="8,0,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <Border Grid.Row="1"
+                                    Visibility="{Binding SelectedDocument.IsFolderMissing, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Background="{DynamicResource Blueprint.WarningContainer}"
+                                    BorderBrush="{DynamicResource Blueprint.Warning}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12,10"
+                                    Margin="0,0,0,12">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderAlert" Width="16" Height="16" Foreground="{DynamicResource Blueprint.Warning}" VerticalAlignment="Center"/>
+                                    <TextBlock Foreground="{DynamicResource Blueprint.OnWarningContainer}" FontSize="12" Margin="8,0,0,0" TextWrapping="Wrap">
+                                        Thư mục hồ sơ hiện không truy cập được. Dữ liệu vẫn còn trong hệ thống; kiểm tra lại ổ đĩa hoặc đường dẫn gốc trước khi thao tác file.
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,12" MaxHeight="200">
+                                <ItemsControl ItemsSource="{Binding FolderTabs}">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Width="100" Margin="0,0,12,12" Cursor="Hand" CornerRadius="8" Padding="12" BorderThickness="2">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{Binding DataContext.CardBackgroundColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Warning}"/>
+                                                                <Setter Property="Background" Value="{DynamicResource Blueprint.WarningContainer}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Border.InputBindings>
+                                                    <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.SelectFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                                </Border.InputBindings>
+                                            <StackPanel HorizontalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="Folder" Width="36" Height="36" Foreground="{DynamicResource Blueprint.Warning}" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding DisplayName}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnWarningContainer}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding FileCount, StringFormat='{}{0} tệp'}" FontSize="10" HorizontalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnWarningContainer}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            </ScrollViewer>
+                            <Border Grid.Row="3" Background="{Binding BackgroundColor}" CornerRadius="12" Padding="16">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Width="32" Height="32" Padding="0" Background="Transparent" BorderThickness="0" 
+                                                    Command="{Binding GoBackFolderCommand}" Cursor="Hand"
+                                                    Visibility="{Binding CanGoBack, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                    ToolTip="Quay lại" Margin="0,0,4,0" AutomationProperties.Name="Quay lại">
+                                                <materialDesign:PackIcon Kind="ArrowLeft" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                            </Button>
+                                            <materialDesign:PackIcon Kind="Folder" Width="20" Height="20" Foreground="{DynamicResource Blueprint.Warning}"/>
+                                            <TextBlock Text="{Binding CurrentFolderDisplayPath}" Foreground="{Binding TextPrimaryColor}" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                                            <Button Padding="12,6" Background="Transparent" Foreground="{DynamicResource Blueprint.Warning}" Command="{Binding CreateNewFolderCommand}" Margin="0,0,8,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="FolderPlus" Width="16" Height="16"/>
+                                                    <TextBlock Text="Tạo thư mục" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Margin="6,0,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Padding="12,6" Background="Transparent" Foreground="{DynamicResource Blueprint.SuccessOutline}" Command="{Binding AddFolderToFolderCommand}" Margin="0,0,8,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="FolderUpload" Width="16" Height="16"/>
+                                                    <TextBlock Text="Thêm thư mục" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Margin="6,0,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Padding="12,6" Background="Transparent" Foreground="{DynamicResource Blueprint.Primary}" Command="{Binding AddFileToFolderCommand}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="FileUpload" Width="16" Height="16"/>
+                                                    <TextBlock Text="Thêm tệp" FontSize="12" Margin="6,0,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Border Grid.Row="1" Background="{Binding CardBackgroundColor}" CornerRadius="8" BorderBrush="{Binding BorderColor}" BorderThickness="2" AllowDrop="True" Drop="DropZone_Drop" DragOver="DropZone_DragOver" MinHeight="150">
+                                        <Grid>
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding CurrentFolderFiles.Count, Converter={StaticResource EmptyToVisibilityConverter}}">
+                                                <materialDesign:PackIcon Kind="CloudUpload" Width="40" Height="40" Foreground="{Binding TextSecondaryColor}" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="Kéo thả file vào đây" Foreground="{Binding TextSecondaryColor}" FontSize="14" Margin="0,12,0,0"/>
+                                            </StackPanel>
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="{Binding CurrentFolderFiles.Count, Converter={StaticResource NotEmptyToVisibilityConverter}}" Padding="8">
+                                                <ItemsControl ItemsSource="{Binding CurrentFolderFiles}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border x:Name="FileItemBorder" Background="{Binding DataContext.BackgroundColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CornerRadius="8" Margin="0,0,0,8" Padding="12,10" BorderBrush="Transparent" BorderThickness="1" Cursor="Hand">
+                                                                <Border.ContextMenu>
+                                                                    <ContextMenu Background="{Binding DataContext.ContextMenuBackground, Source={x:Reference DetailPanel}}"
+                                                                                 Foreground="{Binding DataContext.TextPrimaryColor, Source={x:Reference DetailPanel}}"
+                                                                                 BorderBrush="{Binding DataContext.ContextMenuBorder, Source={x:Reference DetailPanel}}">
+                                                                        <MenuItem Header="Mở file" Command="{Binding DataContext.OpenFileFromDetailCommand, Source={x:Reference Name=DetailPanel}}" CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                                            <MenuItem.Icon>
+                                                                                <materialDesign:PackIcon Kind="OpenInNew" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                                            </MenuItem.Icon>
+                                                                        </MenuItem>
+                                                                        <MenuItem Header="Mở thư mục chứa" Command="{Binding DataContext.OpenContainingFolderCommand, Source={x:Reference Name=DetailPanel}}" CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                                            <MenuItem.Icon>
+                                                                                <materialDesign:PackIcon Kind="FolderOpen" Foreground="{DynamicResource Blueprint.Warning}"/>
+                                                                            </MenuItem.Icon>
+                                                                        </MenuItem>
+                                                                        <Separator/>
+                                                                        <MenuItem Header="📄 Tạo CV thanh toán" 
+                                                                                  Command="{Binding DataContext.GeneratePaymentRequestFromFileCommand, Source={x:Reference Name=DetailPanel}}" 
+                                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                                  Visibility="{Binding PlacementTarget.DataContext.FileExtension, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource ExcelFileToVisibilityConverter}}">
+                                                                            <MenuItem.Icon>
+                                                                                <materialDesign:PackIcon Kind="FileDocument" Foreground="{DynamicResource Blueprint.SuccessOutline}"/>
+                                                                            </MenuItem.Icon>
+                                                                        </MenuItem>
+                                                                        <Separator Visibility="{Binding PlacementTarget.DataContext.FileExtension, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource ExcelFileToVisibilityConverter}}"/>
+                                                                        <MenuItem Header="Đổi tên" Command="{Binding DataContext.RenameFileOrFolderCommand, Source={x:Reference Name=DetailPanel}}" CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                                            <MenuItem.Icon>
+                                                                                <materialDesign:PackIcon Kind="Pencil" Foreground="{DynamicResource Blueprint.Warning}"/>
+                                                                            </MenuItem.Icon>
+                                                                        </MenuItem>
+                                                                        <MenuItem Header="Xóa" Command="{Binding DataContext.DeleteFileFromFolderCommand, Source={x:Reference Name=DetailPanel}}" CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                                            <MenuItem.Icon>
+                                                                                <materialDesign:PackIcon Kind="Delete" Foreground="{DynamicResource Blueprint.Error}"/>
+                                                                            </MenuItem.Icon>
+                                                                        </MenuItem>
+                                                                    </ContextMenu>
+                                                                </Border.ContextMenu>
+                                                                <Border.InputBindings>
+                                                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding DataContext.OpenFileFromDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                                                </Border.InputBindings>
+                                                                <Border.Triggers>
+                                                                    <EventTrigger RoutedEvent="MouseEnter">
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <ColorAnimation Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#3B82F6" Duration="0:0:0.15"/>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </EventTrigger>
+                                                                    <EventTrigger RoutedEvent="MouseLeave">
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <ColorAnimation Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="Transparent" Duration="0:0:0.15"/>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </EventTrigger>
+                                                                </Border.Triggers>
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Border CornerRadius="6" Padding="10,8" MinWidth="50" VerticalAlignment="Center" Background="{Binding FileExtension, Converter={StaticResource FileTypeBgColorConverter}}">
+                                                                        <Border.Style>
+                                                                            <Style TargetType="Border">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                                                        <Setter Property="Background" Value="{DynamicResource Blueprint.WarningContainer}"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                        <Grid HorizontalAlignment="Center">
+                                                                            <materialDesign:PackIcon Kind="{Binding FileExtension, Converter={StaticResource FileTypeIconConverter}}" Width="20" Height="20" Foreground="{Binding FileExtension, Converter={StaticResource FileTypeColorConverter}}">
+                                                                                <materialDesign:PackIcon.Style>
+                                                                                    <Style TargetType="materialDesign:PackIcon">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </materialDesign:PackIcon.Style>
+                                                                            </materialDesign:PackIcon>
+                                                                            <materialDesign:PackIcon Kind="Folder" Width="20" Height="20" Foreground="{DynamicResource Blueprint.Warning}">
+                                                                                <materialDesign:PackIcon.Style>
+                                                                                    <Style TargetType="materialDesign:PackIcon">
+                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </materialDesign:PackIcon.Style>
+                                                                            </materialDesign:PackIcon>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding FileName}" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="13" FontWeight="Medium" TextTrimming="CharacterEllipsis"/>
+                                                                        <TextBlock Text="{Binding FileSize}" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="11" Margin="0,2,0,0"/>
+                                                                    </StackPanel>
+                                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <Button Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0" Cursor="Hand" Command="{Binding DataContext.OpenFileFromDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Mở" AutomationProperties.Name="Mở">
+                                                                            <materialDesign:PackIcon Kind="OpenInNew" Width="16" Height="16" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                                        </Button>
+                                                                        <Button Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0" Cursor="Hand" Command="{Binding DataContext.RenameFileOrFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Đổi tên" AutomationProperties.Name="Đổi tên">
+                                                                            <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16" Foreground="{DynamicResource Blueprint.Warning}"/>
+                                                                        </Button>
+                                                                        <Button Width="30" Height="30" Padding="0" Cursor="Hand" Command="{Binding DataContext.DeleteFileFromFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Xóa" AutomationProperties.Name="Xóa" Style="{StaticResource DangerIconButtonStyle}">
+                                                                            <materialDesign:PackIcon Kind="Delete" Width="16" Height="16"/>
+                                                                        </Button>
+                                                                    </StackPanel>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </Grid>
+
+        <!-- Tab 1: HĐ + Phụ Lục -->
+        <Grid Grid.Row="1" Margin="24,16,24,24" Visibility="{Binding DetailTabIndex, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=5}">
+            <views:GuaranteeLettersView DataContext="{Binding}"/>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="24,16,24,24" Visibility="{Binding DetailTabIndex, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=1}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <!-- Hợp Đồng Gốc -->
+                                    <Border Background="{Binding BackgroundColor}" CornerRadius="8" Padding="16" Margin="0,0,0,16" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                                <materialDesign:PackIcon Kind="FileDocument" Width="20" Height="20" Foreground="{DynamicResource Blueprint.Primary}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Hợp Đồng Gốc" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="SemiBold" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0"/>
+                                            </StackPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="GIÁ TRỊ GỐC" Foreground="{Binding TextSecondaryColor}" FontSize="11" FontWeight="SemiBold"/>
+                                                    <TextBlock Foreground="{Binding TextPrimaryColor}" FontSize="16" Margin="0,4,0,0"><Run Text="{Binding SelectedDocument.ContractValue, StringFormat='{}{0:N0}'}"/><Run Text=" đ" Foreground="{DynamicResource Blueprint.Error}"/></TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="NGÀY KÝ" Foreground="{Binding TextSecondaryColor}" FontSize="11" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding SelectedDocument.SignDate, StringFormat='{}{0:dd/MM/yyyy}'}" Foreground="{Binding TextPrimaryColor}" FontSize="16" Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Phụ Lục Hợp Đồng -->
+                                    <Border Background="{Binding BackgroundColor}" CornerRadius="8" Padding="16" Margin="0,0,0,16" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,12">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="FileDocumentMultiple" Width="20" Height="20" Foreground="{DynamicResource Blueprint.Primary}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Phụ Lục Hợp Đồng" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="SemiBold" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0"/>
+                                                </StackPanel>
+                                                <Button HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Cursor="Hand" Command="{Binding AddAppendixCommand}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="+ Thêm Phụ Lục" Foreground="{DynamicResource Blueprint.Primary}" FontSize="13" FontWeight="Medium"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+                                            <ItemsControl ItemsSource="{Binding Appendices}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{Binding DataContext.CardBackgroundColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CornerRadius="6" Padding="12" Margin="0,0,0,8" BorderBrush="{Binding DataContext.BorderColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" BorderThickness="1">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0">
+                                                                    <TextBlock FontSize="13" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"><Run Text="{Binding AppendixNumber}" FontWeight="SemiBold"/><Run Text=" - "/><Run Text="{Binding Description}"/></TextBlock>
+                                                                    <TextBlock FontSize="12" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Margin="0,2,0,0"><Run Text="Ngày ký: "/><Run Text="{Binding SignDate, StringFormat='{}{0:dd/MM/yyyy}'}"/></TextBlock>
+                                                                </StackPanel>
+                                                                <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                                                    <Run Text="{Binding Value, StringFormat='{}{0:N0}'}"/><Run Text=" đ" Foreground="{DynamicResource Blueprint.Error}"/>
+                                                                </TextBlock>
+                                                                <Button Grid.Column="2" Width="32" Height="32" Padding="0" Background="Transparent" BorderThickness="0" Cursor="Hand" Command="{Binding DataContext.EditAppendixCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Chỉnh sửa" AutomationProperties.Name="Chỉnh sửa">
+                                                                    <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                                </Button>
+                                                                <Button Grid.Column="3" Width="32" Height="32" Padding="0" Cursor="Hand" Command="{Binding DataContext.DeleteAppendixCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Xóa phụ lục" AutomationProperties.Name="Xóa phụ lục" Style="{StaticResource DangerIconButtonStyle}">
+                                                                    <materialDesign:PackIcon Kind="Delete" Width="16" Height="16"/>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBlock Text="Chưa có phụ lục nào" Foreground="{Binding TextSecondaryColor}" FontSize="13" HorizontalAlignment="Center" Margin="0,8,0,8" Visibility="{Binding Appendices.Count, Converter={StaticResource EmptyToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Tổng Cộng -->
+                                    <Border Background="{Binding CardBackgroundColor}" BorderBrush="{Binding BorderColor}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,8">
+                                                <TextBlock Text="Hợp đồng gốc" Foreground="{Binding TextSecondaryColor}" FontSize="11"/>
+                                                <TextBlock HorizontalAlignment="Right" Foreground="{Binding TextPrimaryColor}" FontSize="12"><Run Text="{Binding SelectedDocument.ContractValue, StringFormat='{}{0:N0}'}"/><Run Text=" đ"/></TextBlock>
+                                            </Grid>
+                                            <Grid Margin="0,0,0,12">
+                                                <TextBlock Text="Tổng phụ lục" Foreground="{Binding TextSecondaryColor}" FontSize="11"/>
+                                                <TextBlock HorizontalAlignment="Right" Foreground="{Binding TextSecondaryColor}" FontSize="12" TextDecorations="Underline"><Run Text="{Binding TotalAppendixValue, StringFormat='{}{0:N0}'}"/><Run Text=" đ"/></TextBlock>
+                                            </Grid>
+                                            <Grid>
+                                                <TextBlock Text="TỔNG CỘNG" Foreground="{Binding TextPrimaryColor}" FontSize="14" FontWeight="Bold"/>
+                                                <TextBlock HorizontalAlignment="Right" FontSize="20" FontWeight="Bold"><Run Text="{Binding GrandTotalValue, StringFormat='{}{0:N0}'}" Foreground="{DynamicResource Blueprint.Warning}"/><Run Text=" đ" Foreground="{DynamicResource Blueprint.Error}"/></TextBlock>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Buttons -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Button Background="{DynamicResource Blueprint.Primary}" utilities:ButtonVisuals.HoverBackground="{DynamicResource Blueprint.PrimaryHover}" utilities:ButtonVisuals.PressedBackground="{DynamicResource Blueprint.PrimaryPressed}" Padding="20,0" MinWidth="140" Height="44" BorderThickness="0" Command="{Binding EditSelectedDocumentCommand}" Cursor="Hand">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Chỉnh sửa" Margin="8,0,0,0" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Background="{Binding CardBackgroundColor}" Padding="20,0" MinWidth="140" Height="44" Margin="12,0,0,0" BorderBrush="{DynamicResource Blueprint.Error}" BorderThickness="1" Command="{Binding DeleteDocumentCommand}" CommandParameter="{Binding SelectedDocument}" Cursor="Hand">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Error}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Xóa hồ sơ" Margin="8,0,0,0" FontSize="13" Foreground="{DynamicResource Blueprint.Error}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+        
+        <!-- Tab 2: Tạm ứng & Thanh toán -->
+        <Grid Grid.Row="1" Margin="24,16,24,24" Visibility="{Binding DetailTabIndex, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=2}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <!-- Các Đợt Tạm Ứng -->
+                                    <Border Background="{Binding BackgroundColor}" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,16">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Background="{DynamicResource Blueprint.SuccessContainer}" CornerRadius="4" Padding="6,4">
+                                                        <materialDesign:PackIcon Kind="CashFast" Width="16" Height="16" Foreground="{DynamicResource Blueprint.OnSuccessContainer}"/>
+                                                    </Border>
+                                                    <TextBlock Text="Các Đợt Tạm Ứng" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <Button HorizontalAlignment="Right" Background="Transparent" BorderThickness="1" BorderBrush="{Binding BorderColor}" Padding="12,6" Cursor="Hand" Command="{Binding AddAdvanceCommand}">
+                                                    <TextBlock Text="+ Thêm Tạm Ứng" Foreground="{DynamicResource Blueprint.Primary}" FontSize="12" FontWeight="Medium"/>
+                                                </Button>
+                                            </Grid>
+                                            <!-- Table Header -->
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="120"/>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Ngày" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="1" Text="Nội dung" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="2" Text="Giá trị (VND)" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                                <TextBlock Grid.Column="3" Text="% HĐ" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <!-- Total Row -->
+                                            <Border Background="{Binding CardBackgroundColor}" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="100"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="120"/>
+                                                        <ColumnDefinition Width="80"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="Tổng Tạm Ứng" Foreground="{Binding TextPrimaryColor}" FontSize="13" FontWeight="Bold" Grid.ColumnSpan="2"/>
+                                                    <TextBlock Grid.Column="2" Foreground="{DynamicResource Blueprint.SuccessOutline}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"><Run Text="{Binding TotalAdvance, StringFormat='{}{0:N0}'}"/></TextBlock>
+                                                    <TextBlock Grid.Column="3" Foreground="{DynamicResource Blueprint.SuccessOutline}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"><Run Text="{Binding AdvancePercentage, StringFormat='{}{0:N1}'}"/><Run Text="%"/></TextBlock>
+                                                </Grid>
+                                            </Border>
+                                            <!-- Data Rows -->
+                                            <TextBlock Text="Chưa có dữ liệu tạm ứng" Foreground="{Binding TextSecondaryColor}" FontSize="13" FontStyle="Italic" HorizontalAlignment="Center" Margin="0,16,0,16" Visibility="{Binding Advances.Count, Converter={StaticResource EmptyToVisibilityConverter}}"/>
+                                            <ItemsControl ItemsSource="{Binding Advances}" Visibility="{Binding Advances.Count, Converter={StaticResource NotEmptyToVisibilityConverter}}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{Binding DataContext.CardBackgroundColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CornerRadius="4" Padding="12,8" Margin="0,0,0,4" BorderBrush="{Binding DataContext.BorderColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" BorderThickness="0,0,0,1">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="100"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="120"/>
+                                                                    <ColumnDefinition Width="80"/>
+                                                                    <ColumnDefinition Width="60"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0" Text="{Binding PaymentDate, StringFormat='{}{0:dd/MM/yyyy}'}" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="13" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Description}" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="13" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="2" Foreground="{DynamicResource Blueprint.SuccessOutline}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"><Run Text="{Binding Value, StringFormat='{}{0:N0}'}"/></TextBlock>
+                                                                <TextBlock Grid.Column="3" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"><Run Text="{Binding Percentage, StringFormat='{}{0:N1}'}"/><Run Text="%"/></TextBlock>
+                                                                <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                                    <Button Width="32" Height="32" Padding="0" Background="Transparent" BorderThickness="0" Cursor="Hand" Command="{Binding DataContext.EditAdvanceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Chỉnh sửa" AutomationProperties.Name="Chỉnh sửa">
+                                                                        <materialDesign:PackIcon Kind="Pencil" Width="14" Height="14" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                                    </Button>
+                                                                    <Button Width="32" Height="32" Padding="0" Cursor="Hand" Command="{Binding DataContext.DeleteAdvanceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Xóa" AutomationProperties.Name="Xóa" Style="{StaticResource DangerIconButtonStyle}">
+                                                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Các Đợt Thanh Toán -->
+                                    <Border Background="{Binding BackgroundColor}" CornerRadius="12" Padding="20" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,16">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Background="{DynamicResource Blueprint.PrimaryContainer}" CornerRadius="4" Padding="6,4">
+                                                        <materialDesign:PackIcon Kind="Wallet" Width="16" Height="16" Foreground="{DynamicResource Blueprint.OnPrimaryContainer}"/>
+                                                    </Border>
+                                                    <TextBlock Text="Các Đợt Thanh Toán" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <Button HorizontalAlignment="Right" Background="Transparent" BorderThickness="1" BorderBrush="{Binding BorderColor}" Padding="12,6" Cursor="Hand" Command="{Binding AddPaymentCommand}">
+                                                    <TextBlock Text="+ Thêm Thanh Toán" Foreground="{DynamicResource Blueprint.Primary}" FontSize="12" FontWeight="Medium"/>
+                                                </Button>
+                                            </Grid>
+                                            <!-- Table Header -->
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="120"/>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Ngày" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="1" Text="Nội dung" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="2" Text="Giá trị (VND)" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                                <TextBlock Grid.Column="3" Text="% HĐ" Foreground="{Binding TextSecondaryColor}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <!-- Total Row -->
+                                            <Border Background="{Binding CardBackgroundColor}" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="100"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="120"/>
+                                                        <ColumnDefinition Width="80"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="Tổng Thanh Toán" Foreground="{Binding TextPrimaryColor}" FontSize="13" FontWeight="Bold" Grid.ColumnSpan="2"/>
+                                                    <TextBlock Grid.Column="2" Foreground="{DynamicResource Blueprint.Primary}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"><Run Text="{Binding TotalPayment, StringFormat='{}{0:N0}'}"/></TextBlock>
+                                                    <TextBlock Grid.Column="3" Foreground="{DynamicResource Blueprint.Primary}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"><Run Text="{Binding PaymentPercentage, StringFormat='{}{0:N1}'}"/><Run Text="%"/></TextBlock>
+                                                </Grid>
+                                            </Border>
+                                            <!-- Data Rows -->
+                                            <TextBlock Text="Chưa có dữ liệu thanh toán" Foreground="{Binding TextSecondaryColor}" FontSize="13" FontStyle="Italic" HorizontalAlignment="Center" Margin="0,16,0,16" Visibility="{Binding Payments.Count, Converter={StaticResource EmptyToVisibilityConverter}}"/>
+                                            <ItemsControl ItemsSource="{Binding Payments}" Visibility="{Binding Payments.Count, Converter={StaticResource NotEmptyToVisibilityConverter}}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{Binding DataContext.CardBackgroundColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CornerRadius="4" Padding="12,8" Margin="0,0,0,4" BorderBrush="{Binding DataContext.BorderColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" BorderThickness="0,0,0,1">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="100"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="120"/>
+                                                                    <ColumnDefinition Width="80"/>
+                                                                    <ColumnDefinition Width="60"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0" Text="{Binding PaymentDate, StringFormat='{}{0:dd/MM/yyyy}'}" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="13" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Description}" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="13" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="2" Foreground="{DynamicResource Blueprint.Primary}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"><Run Text="{Binding Value, StringFormat='{}{0:N0}'}"/></TextBlock>
+                                                                <TextBlock Grid.Column="3" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"><Run Text="{Binding Percentage, StringFormat='{}{0:N1}'}"/><Run Text="%"/></TextBlock>
+                                                                <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                                    <Button Width="32" Height="32" Padding="0" Background="Transparent" BorderThickness="0" Cursor="Hand" Command="{Binding DataContext.EditPaymentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Chỉnh sửa" AutomationProperties.Name="Chỉnh sửa">
+                                                                        <materialDesign:PackIcon Kind="Pencil" Width="14" Height="14" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                                    </Button>
+                                                                    <Button Width="32" Height="32" Padding="0" Cursor="Hand" Command="{Binding DataContext.DeletePaymentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" ToolTip="Xóa" AutomationProperties.Name="Xóa" Style="{StaticResource DangerIconButtonStyle}">
+                                                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Quyết toán & Bảo hành -->
+                                    <Border Background="{Binding BackgroundColor}" CornerRadius="12" Padding="20" Margin="0,16,0,0" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,16">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Background="{DynamicResource Blueprint.InfoContainer}" CornerRadius="4" Padding="6,4">
+                                                        <materialDesign:PackIcon Kind="ShieldCheck" Width="16" Height="16" Foreground="{DynamicResource Blueprint.OnInfoContainer}"/>
+                                                    </Border>
+                                                    <TextBlock Text="Quyết Toán &amp; Bảo Hành" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                    <Button Background="#10B981" utilities:ButtonVisuals.HoverBackground="{DynamicResource Blueprint.SuccessSolidHover}" utilities:ButtonVisuals.PressedBackground="{DynamicResource Blueprint.SuccessSolidPressed}" Foreground="White" Height="32" Padding="12,0" Margin="0,0,8,0" Command="{Binding ReadSettlementAICommand}" Cursor="Hand" BorderThickness="0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="Robot" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding SettlementAIButtonText}" FontSize="12" FontWeight="Medium" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Background="{DynamicResource Blueprint.Primary}" utilities:ButtonVisuals.HoverBackground="{DynamicResource Blueprint.PrimaryHover}" utilities:ButtonVisuals.PressedBackground="{DynamicResource Blueprint.PrimaryPressed}" Foreground="White" Height="32" Padding="12,0" AutomationProperties.Name="Lưu quyết toán và bảo hành" Command="{Binding SaveAllSettlementCommand}" Cursor="Hand" BorderThickness="0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="ContentSave" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="Lưu quyết toán &amp; bảo hành" FontSize="12" FontWeight="Medium" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <!-- AI Warning Banner -->
+                                            <Border x:Name="SettlementAIWarning" Visibility="{Binding IsSettlementAIWarningVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Background="{DynamicResource Blueprint.WarningContainer}" CornerRadius="6" Padding="10,8" Margin="0,0,0,16">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="AlertCircle" Width="16" Height="16" Foreground="{DynamicResource Blueprint.Warning}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Dữ liệu đọc bởi AI có thể sai sót, vui lòng kiểm tra lại." Foreground="{DynamicResource Blueprint.OnWarningContainer}" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="200"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Row 1: Giá trị quyết toán -->
+                                                <Border Grid.Row="0" Grid.Column="0" Background="#10B981" CornerRadius="16" Width="32" Height="32" VerticalAlignment="Center" Margin="0,8">
+                                                    <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Giá trị quyết toán" FontSize="13" Foreground="{Binding TextPrimaryColor}" VerticalAlignment="Center" Margin="12,8"/>
+                                                <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding SettlementValueText, UpdateSourceTrigger=PropertyChanged}" PreviewTextInput="NumberValidationTextBox" Background="{Binding CardBackgroundColor}" BorderBrush="{Binding BorderColor}" Foreground="{Binding TextPrimaryColor}" BorderThickness="1" Padding="12,8" FontSize="13" VerticalAlignment="Center" Margin="0,8"/>
+                                                <Border Grid.Row="0" Grid.ColumnSpan="3" BorderBrush="{Binding BorderColor}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom"/>
+
+                                                <!-- Row 2: Giá trị còn lại thanh toán -->
+                                                <Border Grid.Row="1" Grid.Column="0" Background="#EF4444" CornerRadius="16" Width="32" Height="32" VerticalAlignment="Center" Margin="0,8">
+                                                    <materialDesign:PackIcon Kind="CashMinus" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="Giá trị còn lại thanh toán" FontSize="13" Foreground="{Binding TextPrimaryColor}" VerticalAlignment="Center" Margin="12,8"/>
+                                                <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding RemainingPaymentText, UpdateSourceTrigger=PropertyChanged}" PreviewTextInput="NumberValidationTextBox" Background="{Binding CardBackgroundColor}" BorderBrush="{Binding BorderColor}" Foreground="{Binding TextPrimaryColor}" BorderThickness="1" Padding="12,8" FontSize="13" VerticalAlignment="Center" Margin="0,8"/>
+                                                <Border Grid.Row="1" Grid.ColumnSpan="3" BorderBrush="{Binding BorderColor}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom"/>
+
+                                                <!-- Row 3: Giá trị bảo hành -->
+                                                <Border Grid.Row="2" Grid.Column="0" Background="#F59E0B" CornerRadius="16" Width="32" Height="32" VerticalAlignment="Center" Margin="0,8">
+                                                    <materialDesign:PackIcon Kind="ShieldCheck" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="Giá trị giữ lại bảo hành" FontSize="13" Foreground="{Binding TextPrimaryColor}" VerticalAlignment="Center" Margin="12,8"/>
+                                                <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding WarrantyValueText, UpdateSourceTrigger=PropertyChanged}" PreviewTextInput="NumberValidationTextBox" Background="{Binding CardBackgroundColor}" BorderBrush="{Binding BorderColor}" Foreground="{Binding TextPrimaryColor}" BorderThickness="1" Padding="12,8" FontSize="13" VerticalAlignment="Center" Margin="0,8"/>
+                                                <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="{Binding BorderColor}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom"/>
+
+                                                <!-- Row 4: Ngày hết hạn bảo hành -->
+                                                <Border Grid.Row="3" Grid.Column="0" Background="#8B5CF6" CornerRadius="16" Width="32" Height="32" VerticalAlignment="Center" Margin="0,8">
+                                                    <materialDesign:PackIcon Kind="CalendarClock" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="Ngày hết hạn bảo hành" FontSize="13" Foreground="{Binding TextPrimaryColor}" VerticalAlignment="Center" Margin="12,8"/>
+                                                <DatePicker Grid.Row="3" Grid.Column="2" SelectedDate="{Binding WarrantyExpiryDate, UpdateSourceTrigger=PropertyChanged}" Background="{Binding CardBackgroundColor}" BorderBrush="{Binding BorderColor}" Foreground="{Binding TextPrimaryColor}" BorderThickness="1" Padding="8,4" FontSize="13" VerticalAlignment="Center" Margin="0,8"/>
+                                                <Border Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="{Binding BorderColor}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom"/>
+
+                                                <!-- Row 5: Checkbox xuất chứng thư bảo lãnh -->
+                                                <Border Grid.Row="4" Grid.Column="0" Background="#6366F1" CornerRadius="16" Width="32" Height="32" VerticalAlignment="Center" Margin="0,8">
+                                                    <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <CheckBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Content="Xuất chứng thư bảo lãnh bảo hành" IsChecked="{Binding HasWarrantyBond}" Foreground="{Binding TextPrimaryColor}" VerticalAlignment="Center" Margin="12,8" FontSize="13"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+
+
+
+        <!-- Tab 0: Tổng Hợp -->
+        <Grid Grid.Row="1" Margin="24,16,24,24" Visibility="{Binding DetailTabIndex, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=0}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 1. KPI Metric Cards Top Row -->
+                            <UniformGrid x:Name="SummaryMetricsGrid" Grid.Row="0" Rows="1" Columns="4" Margin="0,0,0,20">
+                                <!-- Card 1: Tổng GT hợp đồng -->
+                                <Border Margin="0,0,12,0" Padding="16,12" Background="{Binding CardBackgroundColor}" CornerRadius="12" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                            <materialDesign:PackIcon Kind="Cash" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                            <TextBlock Text="Tổng Giá Trị (HĐ+PL)" FontSize="12" Foreground="{Binding TextSecondaryColor}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,20,0,0">
+                                            <Run Text="{Binding GrandTotalValue, StringFormat='{}{0:N0}'}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                            <Run Text=" VND" FontSize="11" Foreground="{Binding TextSecondaryColor}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Card 2: Đã Tạm Ứng -->
+                                <Border Margin="6,0,6,0" Padding="16,12" Background="{Binding CardBackgroundColor}" CornerRadius="12" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                            <materialDesign:PackIcon Kind="CurrencyUsd" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Warning}"/>
+                                            <TextBlock Text="Tổng Tạm Ứng" FontSize="12" Foreground="{Binding TextSecondaryColor}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,20,0,0">
+                                            <Run Text="{Binding TotalPlannedAdvance, StringFormat='{}{0:N0}'}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Blueprint.Warning}"/>
+                                            <Run Text=" VND" FontSize="11" Foreground="{Binding TextSecondaryColor}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Card 3: Đã Thanh Toán -->
+                                <Border Margin="6,0,6,0" Padding="16,12" Background="{Binding CardBackgroundColor}" CornerRadius="12" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                            <materialDesign:PackIcon Kind="Check" Width="18" Height="18" Foreground="{DynamicResource Blueprint.SuccessOutline}"/>
+                                            <TextBlock Text="Đã Thanh Toán" FontSize="12" Foreground="{Binding TextSecondaryColor}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,20,0,0">
+                                            <Run Text="{Binding TotalPayment, StringFormat='{}{0:N0}'}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Blueprint.SuccessOutline}"/>
+                                            <Run Text=" VND" FontSize="11" Foreground="{Binding TextSecondaryColor}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Card 4: Quyết toán -->
+                                <Border Margin="12,0,0,0" Padding="16,12" Background="{Binding CardBackgroundColor}" CornerRadius="12" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                            <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18" Foreground="{DynamicResource Blueprint.OnInfoContainer}"/>
+                                            <TextBlock Text="Giá Trị Quyết Toán" FontSize="12" Foreground="{Binding TextSecondaryColor}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,20,0,0">
+                                            <Run Text="{Binding SelectedDocument.SettlementValue, StringFormat='{}{0:N0}'}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Blueprint.OnInfoContainer}"/>
+                                            <Run Text=" VND" FontSize="11" Foreground="{Binding TextSecondaryColor}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+                            </UniformGrid>
+
+                            <!-- 2. Main Dashboard Layout -->
+                            <Grid x:Name="SummaryDashboardLayout" Grid.Row="1">
+                                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition x:Name="SummaryNotesColumn" Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Cột trái: Detailed Information -->
+                                <ScrollViewer x:Name="SummaryDetailsScroller" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,12,0">
+                                    <Grid x:Name="SummaryCardsLayout" MaxWidth="1600" HorizontalAlignment="Stretch" Margin="16,0,16,0">
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="0.85*" MinWidth="300"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- LEFT COLUMN -->
+                                        <StackPanel x:Name="SummaryProjectCards" Grid.Column="0" Margin="0,0,8,0">
+                                            <!-- Card: Thông tin Dự án -->
+                                        <Border Background="{Binding BackgroundColor}" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                            <StackPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" MinWidth="140"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- Số hợp đồng -->
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Số hợp đồng:" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Foreground="{Binding TextSecondaryColor}" VerticalAlignment="Top" Margin="0,10"/>
+                                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedDocument.ContractNumber}" FontSize="13" Foreground="{DynamicResource Blueprint.Primary}" FontWeight="Bold" TextWrapping="Wrap" Margin="8,10"/>
+
+                                                    <!-- Ngày ký -->
+                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Ngày ký:" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Foreground="{Binding TextSecondaryColor}" VerticalAlignment="Top" Margin="0,10"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedDocument.SignDate, StringFormat='dd/MM/yyyy'}" FontSize="13" Foreground="{Binding TextPrimaryColor}" FontWeight="Medium" Margin="8,10"/>
+
+                                                    <!-- Dự án -->
+                                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Tên Dự án:" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Foreground="{Binding TextSecondaryColor}" VerticalAlignment="Top" Margin="0,10"/>
+                                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedDocument.ProjectName}" FontSize="13" Foreground="{Binding TextPrimaryColor}" FontWeight="Medium" TextWrapping="Wrap" Margin="8,10"/>
+
+                                                    <!-- Công trình -->
+                                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Công trình:" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Foreground="{Binding TextSecondaryColor}" VerticalAlignment="Top" Margin="0,12"/>
+                                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedDocument.ConstructionName}" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="14" Foreground="{Binding TextPrimaryColor}" FontWeight="ExtraBold" TextWrapping="Wrap" Margin="8,12"/>
+
+                                                    <!-- Hạng mục -->
+                                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Hạng mục:" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Foreground="{Binding TextSecondaryColor}" VerticalAlignment="Top" Margin="0,10"/>
+                                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedDocument.ItemName}" FontSize="13" Foreground="{Binding TextPrimaryColor}" TextWrapping="Wrap" Margin="8,10"/>
+
+                                                    <!-- Địa điểm -->
+                                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Địa điểm:" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="12" Foreground="{Binding TextSecondaryColor}" VerticalAlignment="Top" Margin="0,10"/>
+                                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedDocument.Location}" FontSize="13" Foreground="{Binding TextPrimaryColor}" TextWrapping="Wrap" Margin="8,10"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Card: Thông tin Các Bên (Investor, Employer, Contractor) -->
+                                        <Border Background="{Binding BackgroundColor}" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                                    <materialDesign:PackIcon Kind="Handshake" Width="20" Height="20" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                    <TextBlock Text="THÔNG TIN CÁC BÊN" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="14" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="12"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- Chủ đầu tư - Full Width -->
+                                                    <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,12">
+                                                        <TextBlock Text="CHỦ ĐẦU TƯ" HorizontalAlignment="Center" FontSize="10" Foreground="{Binding TextSecondaryColor}" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                        <Border Background="{DynamicResource Blueprint.SurfaceContainerHigh}" BorderBrush="{DynamicResource Blueprint.Primary}" BorderThickness="1" CornerRadius="4" Padding="8,6">
+                                                            <TextBlock Text="{Binding SelectedDocument.InvestorName}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.Primary}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <!-- Bên Giao Thầu - Left -->
+                                                    <StackPanel Grid.Row="1" Grid.Column="0">
+                                                        <TextBlock Text="BÊN GIAO THẦU" HorizontalAlignment="Center" FontSize="10" Foreground="{Binding TextSecondaryColor}" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                        <Border Background="{DynamicResource Blueprint.PrimaryContainer}" BorderBrush="{DynamicResource Blueprint.Primary}" BorderThickness="1" CornerRadius="4" Padding="8,6" MinHeight="48" VerticalAlignment="Stretch">
+                                                            <TextBlock Text="{Binding SelectedDocument.EmployerName}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnPrimaryContainer}" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <!-- Bên Nhận Thầu - Right -->
+                                                    <StackPanel Grid.Row="1" Grid.Column="2">
+                                                        <TextBlock Text="BÊN NHẬN THẦU" HorizontalAlignment="Center" FontSize="10" Foreground="{Binding TextSecondaryColor}" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                        <Border Background="{DynamicResource Blueprint.SuccessContainer}" BorderBrush="{DynamicResource Blueprint.SuccessOutline}" BorderThickness="1" CornerRadius="4" Padding="8,6" MinHeight="48" VerticalAlignment="Stretch">
+                                                            <TextBlock Text="{Binding SelectedDocument.ContractorName}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSuccessContainer}" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+
+                                        </StackPanel>
+
+                                        <!-- RIGHT COLUMN - FINANCIAL DATA -->
+                                        <StackPanel x:Name="SummaryFinanceCards" Grid.Column="1" Margin="8,0,0,0">
+                                            <!-- Card: Chi tiết Tài chính (HĐ & Phụ lục) -->
+                                        <Border Background="{Binding BackgroundColor}" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                                    <materialDesign:PackIcon Kind="ClipboardText" Width="20" Height="20" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                    <TextBlock Text="Hợp đồng &amp; phụ lục" FontSize="14" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <!-- Original Contract Value -->
+                                                <Grid Margin="0,0,0,12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="FileDocument" Width="14" Height="14" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <TextBlock Text="Giá trị Hợp đồng gốc" FontSize="13" Foreground="{Binding TextSecondaryColor}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Text="{Binding SelectedDocument.ContractValue, StringFormat='{}{0:N0} đ'}" FontSize="14" Foreground="{Binding TextPrimaryColor}" FontWeight="SemiBold"/>
+                                                </Grid>
+
+                                                <!-- Individual Appendices List -->
+                                                <ItemsControl ItemsSource="{Binding Appendices}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="0,0,0,8">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Orientation="Horizontal" Margin="16,0,0,0">
+                                                                    <materialDesign:PackIcon Kind="Label" Width="12" Height="12" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                    <TextBlock Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="12">
+                                                                        <Run Text="Phụ lục "/>
+                                                                        <Run Text="{Binding AppendixNumber, Converter={StaticResource CleanAppendixNumberConverter}}" FontWeight="SemiBold"/>
+                                                                        <Run Text=" ("/><Run Text="{Binding SignDate, StringFormat='dd/MM/yyyy'}"/><Run Text=")"/>
+                                                                    </TextBlock>
+                                                                </StackPanel>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Value, StringFormat='{}{0:N0} đ'}" FontSize="13" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                                <!-- Total Section -->
+                                                <Border BorderBrush="{Binding BorderColor}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,12,0,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Tổng giá trị" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding GrandTotalValue, StringFormat='{}{0:N0} đ'}" FontSize="16" FontWeight="Black" Foreground="{DynamicResource Blueprint.Primary}"/>
+                                                    </Grid>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Row: Tạm ứng & Thanh toán Side-by-Side -->
+                                        <Grid x:Name="AdvancePaymentCards" Margin="0,0,0,16">
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Card: Chi tiết Tạm ứng (Thông minh) -->
+                                            <Border x:Name="AdvanceReconciliationCard" Grid.Column="0" Background="{Binding BackgroundColor}" CornerRadius="12" Padding="16" Margin="0,0,8,0" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                                        <materialDesign:PackIcon Kind="CreditCardClock" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Warning}"/>
+                                                        <TextBlock Text="Đối soát tạm ứng" FontSize="13" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                    
+                                                    <ItemsControl ItemsSource="{Binding AdvanceSummaries}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Background="{Binding DataContext.CardBackgroundColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                                        CornerRadius="8" Padding="10" Margin="0,0,0,10" 
+                                                                        BorderBrush="{Binding DataContext.BorderColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                                        BorderThickness="1">
+                                                                    <StackPanel>
+                                                                        <!-- Entity Header (Contract/Appendix) -->
+                                                                        <Grid Margin="0,0,0,8">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="*"/>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock Grid.Column="0" Text="{Binding EntityName}" FontWeight="Bold" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                                                            <TextBlock Grid.Column="1" HorizontalAlignment="Right" FontSize="11" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Margin="8,0,0,0">
+                                                                                <Run Text="{Binding PlannedValue, StringFormat='{}{0:N0} đ'}" FontWeight="SemiBold"/>
+                                                                            </TextBlock>
+                                                                        </Grid>
+
+                                                                        <!-- Sub Items (Actual Payments) -->
+                                                                        <ItemsControl ItemsSource="{Binding SubItems}">
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <Grid Margin="12,0,0,4">
+                                                                                        <Grid.ColumnDefinitions>
+                                                                                            <ColumnDefinition Width="*"/>
+                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                        </Grid.ColumnDefinitions>
+                                                                                        <TextBlock FontSize="11" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=UserControl}}" TextTrimming="CharacterEllipsis">
+                                                                                            <Run Text="{Binding Name}"/><Run Text=" ("/><Run Text="{Binding Date}"/><Run Text=")"/>
+                                                                                        </TextBlock>
+                                                                                        <TextBlock Grid.Column="1" Text="{Binding Value, StringFormat='{}{0:N0}'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource Blueprint.SuccessOutline}" HorizontalAlignment="Right" Margin="8,0,0,0"/>
+                                                                                    </Grid>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+
+                                                                        <!-- Remaining / Completed Status -->
+                                                                        <Border BorderBrush="{Binding DataContext.BorderColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                                                BorderThickness="0,1,0,0" Margin="0,6,0,0" Padding="0,6,0,0">
+                                                                            <Grid>
+                                                                                <!-- Completed State -->
+                                                                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsCompleted, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                                    <materialDesign:PackIcon Kind="CheckCircle" Width="14" Height="14" Foreground="{DynamicResource Blueprint.SuccessOutline}" VerticalAlignment="Center"/>
+                                                                                    <TextBlock Text="Hoàn thành" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Blueprint.SuccessOutline}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                                                </StackPanel>
+
+                                                                                <!-- Remaining State -->
+                                                                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsCompleted, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                                                                    <materialDesign:PackIcon Kind="AlertCircle" Width="14" Height="14" Foreground="{DynamicResource Blueprint.Warning}" VerticalAlignment="Center"
+                                                                                                            Visibility="{Binding PlannedValue, Converter={StaticResource GreaterThan0ToVisibilityConverter}}"/>
+                                                                                    <TextBlock FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                                                               Visibility="{Binding PlannedValue, Converter={StaticResource GreaterThan0ToVisibilityConverter}}">
+                                                                                        <Run Text="Tạm ứng còn lại: " Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                                                                                        <Run Text="{Binding RemainingValue, Mode=OneWay, StringFormat='{}{0:N0} đ'}" FontWeight="Bold" Foreground="{DynamicResource Blueprint.Error}"/>
+                                                                                    </TextBlock>
+                                                                                    <!-- Case where no plan is set -->
+                                                                                    <TextBlock Text="Chưa có giá trị dự kiến" FontSize="11" FontStyle="Italic" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                                               Visibility="{Binding PlannedValue, Converter={StaticResource LessOrEqual0ToVisibilityConverter}}"/>
+                                                                                </StackPanel>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Card: Chi tiết Thanh toán -->
+                                            <Border x:Name="PaymentCard" Grid.Column="1" Background="{Binding BackgroundColor}" CornerRadius="12" Padding="16" Margin="8,0,0,0" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                                        <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18" Foreground="{DynamicResource Blueprint.SuccessOutline}"/>
+                                                        <TextBlock Text="Thanh toán" FontSize="13" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+
+                                                    <ItemsControl ItemsSource="{Binding Payments}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid Margin="0,0,0,6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Margin="0,0,12,0" Text="{Binding Description}" FontSize="12" Foreground="{Binding DataContext.TextSecondaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" TextTrimming="CharacterEllipsis"  HorizontalAlignment="Left"/><TextBlock Grid.Column="1" Text="{Binding Value, StringFormat='{}{0:N0}'}" FontSize="12" Foreground="{Binding DataContext.TextPrimaryColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}" HorizontalAlignment="Right" FontWeight="Medium"/></Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <Border BorderBrush="{Binding BorderColor}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,8,0,0">
+                                                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Margin="0,0,12,0" Text="Tổng thanh toán" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource Blueprint.SuccessOutline}"/><TextBlock Grid.Column="1" Text="{Binding TotalPayment, StringFormat='{}{0:N0}'}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource Blueprint.SuccessOutline}" HorizontalAlignment="Right"/></Grid>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Card: Quyết toán & Bảo hành -->
+                                        <Border Background="{Binding BackgroundColor}" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderBrush="{Binding BorderColor}" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                                <StackPanel Grid.Row="0" Grid.RowSpan="2">
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,190,12">
+                                                        <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18" Foreground="{DynamicResource Blueprint.OnInfoContainer}"/>
+                                                        <TextBlock Text="Quyết toán &amp; bảo hành" FontSize="13" FontWeight="Bold" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" MinWidth="160"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        
+                                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Giá trị Quyết toán:" FontSize="13" Foreground="{Binding TextSecondaryColor}"/>
+                                                        <TextBlock HorizontalAlignment="Right" Grid.Row="0" Grid.Column="1" Text="{Binding SelectedDocument.SettlementValue, StringFormat='{}{0:N0} đ'}" FontSize="14" Foreground="{DynamicResource Blueprint.OnInfoContainer}" FontWeight="Bold" Margin="8,0,0,4"/>
+                                                        
+                                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Giá trị còn lại thanh toán:" FontSize="13" Foreground="{Binding TextSecondaryColor}"/>
+                                                        <TextBlock HorizontalAlignment="Right" Grid.Row="1" Grid.Column="1" Text="{Binding SelectedDocument.RemainingPaymentValue, StringFormat='{}{0:N0} đ'}" FontSize="14" Foreground="{DynamicResource Blueprint.Error}" FontWeight="Bold" Margin="8,0,0,4"/>
+
+                                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Giá trị bảo hành (KTBH):" FontSize="13" Foreground="{Binding TextSecondaryColor}"/>
+                                                        <TextBlock HorizontalAlignment="Right" Grid.Row="2" Grid.Column="1" Text="{Binding SelectedDocument.WarrantyValue, StringFormat='{}{0:N0} đ'}" FontSize="14" Foreground="{Binding TextPrimaryColor}" FontWeight="SemiBold" Margin="8,0,0,4"/>
+                                                        
+                                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Hạn bảo hành:" FontSize="13" Foreground="{Binding TextSecondaryColor}"/>
+                                                        <TextBlock HorizontalAlignment="Right" Grid.Row="3" Grid.Column="1" Text="{Binding SelectedDocument.WarrantyExpiryDate, StringFormat='dd/MM/yyyy'}" FontSize="14" Foreground="{Binding TextPrimaryColor}" Margin="8,0,0,0"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                                
+                                                <!-- Warranty Bond Section Only -->
+                                                <StackPanel Grid.Row="0" VerticalAlignment="Top" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                    <StackPanel Orientation="Horizontal" Visibility="{Binding SelectedDocument.HasWarrantyBond, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <materialDesign:PackIcon Kind="Certificate" Width="18" Height="18" Foreground="{DynamicResource Blueprint.Warning}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Có chứng thư bảo lãnh" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource Blueprint.Warning}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+                                    </Grid>
+                                </ScrollViewer>
+
+                                <!-- Cột phải: Ghi chú (Collapsible Desktop style) -->
+                                <Grid x:Name="SummaryNotesPanel" Grid.Column="1" Margin="12,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Ribbon Handle (Always visible) -->
+                                    <Border x:Name="SummaryNotesRibbon" Grid.Column="0" Background="{Binding NoteBorderColor}" Width="48" CornerRadius="12,0,0,12" VerticalAlignment="Stretch" Margin="8,0,0,0">
+                                        <Grid>
+                                            <StackPanel x:Name="SummaryNotesRibbonControls" VerticalAlignment="Top" Margin="0,24,0,0">
+                                                <!-- Toggle Button with better visibility -->
+                                                <Button Command="{Binding ToggleNotesCommand}" 
+                                                        Background="{Binding NoteTextColor}" 
+                                                        Foreground="{Binding NoteBackgroundColor}"
+                                                        Width="36" Height="36" 
+                                                        Padding="0" 
+                                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                        HorizontalAlignment="Center" Cursor="Hand">
+                                                    <materialDesign:PackIcon Width="24" Height="24">
+                                                        <materialDesign:PackIcon.Style>
+                                                            <Style TargetType="materialDesign:PackIcon">
+                                                                <Setter Property="Kind" Value="ChevronLeft"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsNotesExpanded}" Value="True">
+                                                                        <Setter Property="Kind" Value="ChevronRight"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </materialDesign:PackIcon.Style>
+                                                    </materialDesign:PackIcon>
+                                                </Button>
+
+                                                <!-- Vertical Label -->
+                                                <TextBlock x:Name="SummaryNotesCollapsedLabel" Text="GHI CHÚ" 
+                                                           Margin="0,40,0,0"
+                                                           FontSize="14" FontWeight="Black" 
+                                                           Foreground="{Binding NoteTextColor}"
+                                                           HorizontalAlignment="Center"
+                                                           Visibility="{Binding IsNotesExpanded, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                                    <TextBlock.LayoutTransform>
+                                                        <RotateTransform Angle="-90"/>
+                                                    </TextBlock.LayoutTransform>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Notes Content Panel -->
+                                    <Border x:Name="SummaryNotesContent" Grid.Column="1" Background="{Binding NoteBackgroundColor}" CornerRadius="0,16,16,0" Padding="20" 
+                                            BorderBrush="{Binding NoteBorderColor}" BorderThickness="0,1,1,1"
+                                            Visibility="{Binding IsNotesExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Width="280">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                                                <materialDesign:PackIcon Kind="NoteEdit" Width="24" Height="24" Foreground="{Binding NoteTextColor}"/>
+                                                <TextBlock Text="Ghi Chú Hợp Đồng" FontSize="16" FontWeight="Bold" Foreground="{Binding NoteTextColor}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            
+                                            <TextBox x:Name="SummaryNotesEditor" Grid.Row="1" Text="{Binding SummaryNotes, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Style="{x:Null}"
+                                                     Background="Transparent" BorderThickness="0" 
+                                                     Foreground="{Binding NoteTextColor}" CaretBrush="{Binding NoteTextColor}" FontSize="15" 
+                                                     TextWrapping="Wrap" AcceptsReturn="True" MinHeight="120"
+                                                     VerticalScrollBarVisibility="Auto"
+                                                     HorizontalScrollBarVisibility="Disabled"
+                                                     VerticalAlignment="Stretch"/>
+                                            
+                                            <Button Grid.Row="2" Command="{Binding SaveSummaryNotesCommand}" 
+                                                    Background="{Binding NoteTextColor}" BorderThickness="0" 
+                                                    Foreground="{Binding NoteBackgroundColor}"
+                                                    Height="40" Margin="0,20,0,0" materialDesign:ButtonAssist.CornerRadius="20">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18"/>
+                                                    <TextBlock Text="Lưu ghi chú" Margin="8,0,0,0" FontWeight="SemiBold"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
+    </Grid>
+</UserControl>

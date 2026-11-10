@@ -1,0 +1,110 @@
+<UserControl x:Class="DocumentManagement.Views.Updates.UpdateErrorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- CONTENT -->
+        <Grid Margin="22,20,22,22">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="48"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ERROR ICON -->
+            <Border Width="48"
+                    Height="48"
+                    CornerRadius="12"
+                    Background="{DynamicResource Blueprint.ErrorContainer}"
+                    VerticalAlignment="Top">
+
+                <materialDesign:PackIcon
+                    Kind="AlertCircleOutline"
+                    Width="23"
+                    Height="23"
+                    Foreground="{DynamicResource Blueprint.OnErrorContainer}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+
+            </Border>
+
+            <!-- TEXT -->
+            <StackPanel Grid.Column="1"
+                        Margin="14,0,0,0">
+
+                <TextBlock Text="CẬP NHẬT THẤT BẠI"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Status.Error}"/>
+
+                <TextBlock Text="Không thể cập nhật"
+                           FontFamily="{DynamicResource Blueprint.Font.Header}"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Blueprint.OnSurface}"
+                           Margin="0,2,0,0"/>
+
+                <TextBlock x:Name="DetailsText"
+                           FontSize="12"
+                           LineHeight="18"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                           Margin="0,9,0,0"/>
+
+            </StackPanel>
+
+        </Grid>
+
+        <!-- FOOTER -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource Blueprint.SurfaceContainerHigh}"
+                BorderBrush="{DynamicResource Blueprint.Outline}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="0,0,16,16">
+
+            <Grid Margin="20,10">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- SECONDARY -->
+                <Button Grid.Column="1"
+                        Content="Để sau"
+                        Click="Later_Click"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Foreground="{DynamicResource Blueprint.OnSurface}"
+                        Background="{DynamicResource Blueprint.SurfaceContainer}"
+                        BorderBrush="{DynamicResource Blueprint.Outline}"
+                        BorderThickness="1"
+                        Padding="20,4,20,4"
+                        Margin="0,0,10,0"
+                        materialDesign:ButtonAssist.CornerRadius="8"/>
+
+                <!-- PRIMARY -->
+                <Button x:Name="RetryButton"
+                        Grid.Column="2"
+                        Content="Thử lại"
+                        Click="Retry_Click"
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Background="{DynamicResource Blueprint.Primary}"
+                        Foreground="{DynamicResource Blueprint.OnPrimary}"
+                        Padding="20,4,20,4"
+                        materialDesign:ButtonAssist.CornerRadius="8"/>
+
+            </Grid>
+
+        </Border>
+
+    </Grid>
+
+</UserControl>

@@ -1,0 +1,80 @@
+﻿<Window x:Class="DocumentManagement.Views.InitialChecklistSummaryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Tổng hợp thành phần hồ sơ"
+        Width="1180"
+        Height="720"
+        WindowStartupLocation="CenterOwner"
+        Background="{Binding BackgroundColor}"
+        FontFamily="Inter, Segoe UI">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="220"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <Border Width="44" Height="44" CornerRadius="10" Background="#7C3AED" Margin="0,0,12,0">
+                    <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="24" Height="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Tổng hợp thành phần hồ sơ" Foreground="{Binding TextPrimaryColor}" FontSize="18" FontWeight="Bold"/>
+                    <TextBlock Text="Theo dõi hợp đồng nào đủ hồ sơ ban đầu, hợp đồng nào còn thiếu." Foreground="{Binding TextSecondaryColor}" FontSize="12"/>
+                </StackPanel>
+            </StackPanel>
+            <Button Grid.Column="1" Width="36" Height="36" Padding="0" Background="Transparent" BorderThickness="0" Click="Close_Click">
+                <materialDesign:PackIcon Kind="Close" Width="20" Height="20" Foreground="{Binding TextSecondaryColor}"/>
+            </Button>
+        </Grid>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding InitialChecklistSummaryRows}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  Background="{Binding CardBackgroundColor}"
+                  Foreground="{Binding TextPrimaryColor}"
+                  BorderBrush="{Binding BorderColor}"
+                  BorderThickness="1"
+                  RowHeight="38">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Hợp đồng" Binding="{Binding ContractNumber}" Width="170"/>
+                <DataGridTextColumn Header="Nhà thầu" Binding="{Binding ContractorName}" Width="220"/>
+                <DataGridTextColumn Header="Tiến độ" Binding="{Binding ProgressText}" Width="90"/>
+                <DataGridTextColumn Header="Còn thiếu" Binding="{Binding MissingText}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="2" Text="Chi tiết tất cả hợp đồng" Foreground="{Binding TextPrimaryColor}" FontSize="14" FontWeight="SemiBold" Margin="0,18,0,10"/>
+
+        <DataGrid Grid.Row="3"
+                  ItemsSource="{Binding InitialChecklistDetailRows}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  Background="{Binding CardBackgroundColor}"
+                  Foreground="{Binding TextPrimaryColor}"
+                  BorderBrush="{Binding BorderColor}"
+                  BorderThickness="1"
+                  RowHeight="36">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Hợp đồng" Binding="{Binding ContractNumber}" Width="150"/>
+                <DataGridTextColumn Header="Hồ sơ" Binding="{Binding Name}" Width="210"/>
+                <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="130"/>
+                <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

@@ -1,0 +1,11 @@
+{
+  "version": "1.1.0",
+  "packageUrl": "PUT_YOUR_UPDATE_PACKAGE_URL_HERE",
+  "changes": [
+    "Thêm tính năng mới",
+    "Sửa lỗi giao diện",
+    "Cải thiện hiệu năng"
+  ],
+  "releaseNotes": "Mô tả ngắn bản cập nhật.",
+  "entryExecutable": "DocumentManagement.exe"
+}

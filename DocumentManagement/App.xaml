@@ -1,0 +1,26 @@
+<Application x:Class="DocumentManagement.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:DocumentManagement.Converters"
+             xmlns:models="clr-namespace:DocumentManagement.Models"
+             xmlns:views="clr-namespace:DocumentManagement.Views"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
+                <ResourceDictionary Source="Styles/Converters.xaml" />
+                <ResourceDictionary Source="Styles/SharedStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Global DataTemplates -->
+            <DataTemplate DataType="{x:Type models:CvxdInfo}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <views:SharedProjectInfoView Margin="0,0,0,32"/>
+                </ScrollViewer>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

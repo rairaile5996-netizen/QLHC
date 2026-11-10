@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:converters="clr-namespace:DocumentManagement.Converters">
+
+    <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    <materialDesign:BooleanToVisibilityConverter x:Key="InvertedBoolToVis" TrueValue="Collapsed" FalseValue="Visible" />
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    <converters:EmptyToVisibilityConverter x:Key="EmptyToVisibilityConverter"/>
+    <converters:NotEmptyToVisibilityConverter x:Key="NotEmptyToVisibilityConverter"/>
+    <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+    <converters:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter"/>
+    <converters:TabBorderConverter x:Key="TabBorderConverter"/>
+    <converters:TabForegroundConverter x:Key="TabForegroundConverter"/>
+    <converters:TabVisibilityConverter x:Key="TabVisibilityConverter"/>
+    <converters:FileTypeIconConverter x:Key="FileTypeIconConverter"/>
+    <converters:FileTypeColorConverter x:Key="FileTypeColorConverter"/>
+    <converters:FileTypeBgColorConverter x:Key="FileTypeBgColorConverter"/>
+    <converters:ExcelFileToVisibilityConverter x:Key="ExcelFileToVisibilityConverter"/>
+    <converters:TabIndexConverter x:Key="TabIndexConverter"/>
+    <converters:ProgressWidthConverter x:Key="ProgressWidthConverter"/>
+    <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+    <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+    <converters:TypeToVisibilityConverter x:Key="TypeToVisibilityConverter"/>
+    <converters:SortIndexConverter x:Key="SortIndexConverter"/>
+    <converters:PathToFileNameConverter x:Key="PathToFileNameConverter"/>
+    <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+    <converters:BoolToDialogTitleConverter x:Key="BoolToDialogTitleConverter"/>
+    <converters:TabVisibilityConverter x:Key="IndexToVisibilityConverter"/>
+    <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
+    <converters:GreaterThan0ToVisibilityConverter x:Key="GreaterThan0ToVisibilityConverter"/>
+    <converters:LessOrEqual0ToVisibilityConverter x:Key="LessOrEqual0ToVisibilityConverter"/>
+    <converters:CleanAppendixNumberConverter x:Key="CleanAppendixNumberConverter"/>
+    <converters:StringVisibilityConverter x:Key="StringVisibilityConverter"/>
+    <converters:BoolToEyeIconConverter x:Key="BoolToEyeIconConverter"/>
+    <converters:SafeImageSourceConverter x:Key="SafeImageSourceConverter"/>
+
+</ResourceDictionary>

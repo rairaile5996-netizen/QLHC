@@ -1,0 +1,661 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:converters="clr-namespace:DocumentManagement.Converters"
+                    xmlns:utilities="clr-namespace:DocumentManagement.Utilities">
+
+    <!-- BLUEPRINT CORE PALETTE (Global) -->
+    <SolidColorBrush x:Key="Blueprint.Surface" Color="#EAF0F6"/>
+    <SolidColorBrush x:Key="Blueprint.SurfaceContainer" Color="#F7FAFC"/>
+    <SolidColorBrush x:Key="Blueprint.SurfaceBright" Color="#E1E8F0"/>
+    <SolidColorBrush x:Key="Blueprint.SurfaceContainerHigh" Color="#D7E1EC"/>
+    <SolidColorBrush x:Key="Blueprint.OnSurface" Color="#172033"/>
+    <SolidColorBrush x:Key="Blueprint.OnSurfaceVariant" Color="#4B5F78"/>
+    <SolidColorBrush x:Key="Blueprint.Outline" Color="#BAC7D6"/>
+    <SolidColorBrush x:Key="Blueprint.Primary" Color="#2563EB"/>
+    <SolidColorBrush x:Key="Blueprint.OnPrimary" Color="White"/>
+    <SolidColorBrush x:Key="Blueprint.ButtonHover" Color="#CCD7E4"/>
+    <SolidColorBrush x:Key="Blueprint.ButtonPressed" Color="#BBCBDD"/>
+    <SolidColorBrush x:Key="Blueprint.PrimaryHover" Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="Blueprint.PrimaryPressed" Color="#1E40AF"/>
+    <SolidColorBrush x:Key="Blueprint.Danger" Color="#BE123C"/>
+    <SolidColorBrush x:Key="Blueprint.DangerBackground" Color="#FDE7EC"/>
+    <SolidColorBrush x:Key="Blueprint.DangerHover" Color="#FBD5DF"/>
+    <SolidColorBrush x:Key="Blueprint.DangerPressed" Color="#F9C4D2"/>
+    <SolidColorBrush x:Key="Blueprint.SuccessHover" Color="#A7F3D0"/>
+    <SolidColorBrush x:Key="Blueprint.SuccessPressed" Color="#6EE7B7"/>
+    <SolidColorBrush x:Key="Blueprint.SuccessSolidHover" Color="#047857"/>
+    <SolidColorBrush x:Key="Blueprint.SuccessSolidPressed" Color="#065F46"/>
+    <SolidColorBrush x:Key="Blueprint.WarningHover" Color="#B45309"/>
+    <SolidColorBrush x:Key="Blueprint.WarningPressed" Color="#92400E"/>
+    <SolidColorBrush x:Key="Blueprint.PrimaryContainer" Color="#DBEAFE"/>
+    <SolidColorBrush x:Key="Blueprint.Error" Color="#DC2626"/>
+    <SolidColorBrush x:Key="Blueprint.Warning" Color="#D97706"/>
+    <SolidColorBrush x:Key="Blueprint.Selection" Color="#D7E7FB"/>
+    <SolidColorBrush x:Key="Blueprint.SelectionStrong" Color="#BFDBFE"/>
+    <SolidColorBrush x:Key="Blueprint.Focus" Color="#2563EB"/>
+    <SolidColorBrush x:Key="Blueprint.ErrorContainer" Color="#FEE2E2"/>
+    <SolidColorBrush x:Key="Blueprint.WarningContainer" Color="#FEF3C7"/>
+    <SolidColorBrush x:Key="Blueprint.SuccessContainer" Color="#D1FAE5"/>
+    <SolidColorBrush x:Key="Blueprint.SuccessOutline" Color="#10B981"/>
+    <SolidColorBrush x:Key="Blueprint.OnSuccessContainer" Color="#065F46"/>
+    <SolidColorBrush x:Key="Blueprint.ScrollThumb" Color="#667C8FA8"/>
+    <SolidColorBrush x:Key="Blueprint.ScrollThumbHover" Color="#995B6B80"/>
+    <SolidColorBrush x:Key="Blueprint.BusyOverlay" Color="#B8F1F5F9"/>
+
+    <!-- Typography & Sizes (Global) -->
+    <sys:Double x:Key="Blueprint.FontSize.Display">24</sys:Double>
+    <sys:Double x:Key="Blueprint.FontSize.Headline">18</sys:Double>
+    <sys:Double x:Key="Blueprint.FontSize.Body">14</sys:Double>
+    <sys:Double x:Key="Blueprint.FontSize.Small">12</sys:Double>
+    <FontFamily x:Key="Blueprint.Font.Header">Manrope, Segoe UI Semibold</FontFamily>
+    <FontFamily x:Key="Blueprint.Font.Body">Inter, Segoe UI</FontFamily>
+
+    <!-- Spacing System (8px grid) -->
+    <sys:Double x:Key="Blueprint.Spacing.XS">4</sys:Double>
+    <sys:Double x:Key="Blueprint.Spacing.SM">8</sys:Double>
+    <sys:Double x:Key="Blueprint.Spacing.MD">16</sys:Double>
+    <sys:Double x:Key="Blueprint.Spacing.LG">24</sys:Double>
+    <sys:Double x:Key="Blueprint.Spacing.XL">32</sys:Double>
+    <sys:Double x:Key="Blueprint.Spacing.XXL">48</sys:Double>
+
+    <!-- Status Colors -->
+    <SolidColorBrush x:Key="Status.InProgress" Color="#2563EB"/>
+    <SolidColorBrush x:Key="Status.Completed" Color="#059669"/>
+    <SolidColorBrush x:Key="Status.Pending" Color="#D97706"/>
+    <SolidColorBrush x:Key="Status.Error" Color="#DC2626"/>
+    
+    <!-- Required Field Indicator -->
+    <Style x:Key="RequiredFieldLabel" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+    
+    <!-- Status Badge Style -->
+    <Style x:Key="StatusBadge" TargetType="Border">
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+    
+    <!-- Fade In Animation Style -->
+    <Style x:Key="FadeInStyle" TargetType="Grid">
+        <Style.Triggers>
+            <Trigger Property="Visibility" Value="Visible">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.0" To="1.0" Duration="0:0:0.3"/>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" From="10" To="0" Duration="0:0:0.3"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="0"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ScrollBar Thumb Style -->
+    <Style x:Key="ScrollBarThumb" TargetType="Thumb">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.ScrollThumb}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="3"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Blueprint.ScrollThumbHover}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Modern ScrollBar Style -->
+    <Style x:Key="ModernScrollBar" TargetType="ScrollBar">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Width" Value="6"/>
+        <Setter Property="Opacity" Value="0.4"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid>
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ScrollBarThumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Opacity" Value="0.8"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Rounded Button Style -->
+    <Style x:Key="RoundedButton" TargetType="Button">
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.ButtonHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.ButtonPressed}"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="FontFamily" Value="{DynamicResource Blueprint.Font.Header}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" 
+                            Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            CornerRadius="8" 
+                            Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <Border x:Name="focusBorder" BorderBrush="{DynamicResource Blueprint.Focus}" BorderThickness="0" CornerRadius="6" IsHitTestVisible="False"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{Binding Path=(utilities:ButtonVisuals.HoverBackground), RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{Binding Path=(utilities:ButtonVisuals.PressedBackground), RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="focusBorder" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Primary Button (Blue) -->
+    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.PrimaryHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.PrimaryPressed}"/>
+        <Setter Property="Background" Value="{DynamicResource Blueprint.Primary}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnPrimary}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Success Button (Green) -->
+    <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.SuccessSolidHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.SuccessSolidPressed}"/>
+        <Setter Property="Background" Value="{DynamicResource Status.Completed}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnPrimary}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Danger Button (Red) -->
+    <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.DangerBackground}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.Danger}"/>
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.DangerHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.DangerPressed}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Warning Button (Orange) -->
+    <Style x:Key="WarningButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.WarningHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.WarningPressed}"/>
+        <Setter Property="Background" Value="{DynamicResource Blueprint.Warning}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnPrimary}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Skeleton Loading Animation -->
+    <Storyboard x:Key="SkeletonShimmer" RepeatBehavior="Forever">
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.Opacity)" From="0.4" To="1" Duration="0:0:0.8" AutoReverse="True"/>
+    </Storyboard>
+
+    <!-- Card Style -->
+    <Style x:Key="CardBorder" TargetType="Border">
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.08"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Tab Button Style (no rounded corners, bottom border only) -->
+    <Style x:Key="TabButtonStyle" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" 
+                            Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <Border x:Name="focusBorder" BorderBrush="{DynamicResource Blueprint.Focus}" BorderThickness="0" IsHitTestVisible="False"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="focusBorder" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Simple Snackbar Style -->
+    <Style TargetType="materialDesign:Snackbar" BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+
+    <!-- Rounded Snackbar Style -->
+    <Style x:Key="RoundedSnackbarStyle" TargetType="materialDesign:Snackbar" BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <!-- ScrollViewer Style -->
+    <Style TargetType="ScrollViewer">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollViewer">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="6"/>
+                        </Grid.ColumnDefinitions>
+                        <ScrollContentPresenter Grid.Column="0"/>
+                        <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" 
+                                   Style="{StaticResource ModernScrollBar}"
+                                   Value="{TemplateBinding VerticalOffset}"
+                                   Maximum="{TemplateBinding ScrollableHeight}"
+                                   ViewportSize="{TemplateBinding ViewportHeight}"
+                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Theme-aware Context Menu Style -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.4"/>
+                        </Border.Effect>
+                        <StackPanel IsItemsHost="True"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="MenuItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <!-- Bind to parent ContextMenu's foreground which is already bound to the correct color -->
+        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="MenuBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}" Cursor="Hand">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter Grid.Column="0" ContentSource="Icon" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="MenuBorder" Property="Background" Value="{DynamicResource Blueprint.Selection}"/> 
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Separator">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Margin" Value="8,4"/>
+        <!-- Bind to parent ContextMenu's BorderBrush -->
+        <Setter Property="Background" Value="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/> 
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Background="{TemplateBinding Background}" Height="{TemplateBinding Height}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Modern TextBox Style -->
+    <Style x:Key="ModernTextBox" TargetType="TextBox">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainer}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontFamily" Value="{StaticResource Blueprint.Font.Body}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="border" 
+                            Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            CornerRadius="8">
+                        <ScrollViewer x:Name="PART_ContentHost" 
+                                      Focusable="false" 
+                                      HorizontalScrollBarVisibility="Hidden" 
+                                      VerticalScrollBarVisibility="Hidden"
+                                      Margin="{TemplateBinding Padding}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                            <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.6"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Modern ComboBox Style -->
+    <Style x:Key="ModernComboBox" TargetType="ComboBox">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainer}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontFamily" Value="{StaticResource Blueprint.Font.Body}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter x:Name="contentPresenter" 
+                                                  Grid.Column="0"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
+                                                  Content="{TemplateBinding SelectionBoxItem}" 
+                                                  ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" 
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                  IsHitTestVisible="false" 
+                                                  Margin="{TemplateBinding Padding}" 
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                <materialDesign:PackIcon Grid.Column="1" Kind="ChevronDown" 
+                                                         Width="16" Height="16" 
+                                                         Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" 
+                                                         Margin="0,0,12,0"
+                                                         VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ToggleButton Grid.ColumnSpan="2"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Focusable="False"
+                                      IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent">
+                                        <ContentPresenter/>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <Popup x:Name="PART_Popup" 
+                               AllowsTransparency="true" 
+                               IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" 
+                               Placement="Bottom" 
+                               PopupAnimation="Slide">
+                            <Border Background="{DynamicResource Blueprint.SurfaceBright}" 
+                                    BorderBrush="{DynamicResource Blueprint.Outline}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="8" 
+                                    MaxHeight="200">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.4"/>
+                                </Border.Effect>
+                                <ScrollViewer>
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                            <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="FilterChipStyle" TargetType="RadioButton">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="ChipBorder" 
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource Blueprint.Outline}"
+                            BorderThickness="1" 
+                            CornerRadius="14" 
+                            Padding="10,5" 
+                            Cursor="Hand">
+                        <TextBlock x:Name="ChipText" 
+                                   Text="{TemplateBinding Content}" 
+                                   FontSize="11" 
+                                   Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource Blueprint.Primary}"/>
+                            <Setter TargetName="ChipBorder" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                            <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource Blueprint.OnPrimary}"/>
+                            <Setter TargetName="ChipText" Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ChipBorder" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                        </Trigger>
+                        </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Premium Button Style that preserves foreground color on hover/focus -->
+    <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.ButtonHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.ButtonPressed}"/>
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="Padding" Value="16,0"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontFamily" Value="{DynamicResource Blueprint.Font.Header}"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" 
+                            Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            CornerRadius="8"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <!-- Focus indicator border -->
+                            <Border x:Name="focusBorder" BorderBrush="{DynamicResource Blueprint.Focus}" BorderThickness="0" CornerRadius="6" IsHitTestVisible="False"/>
+                            
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center" 
+                                              Margin="{TemplateBinding Padding}"
+                                              RecognizesAccessKey="True"
+                                              SnapsToDevicePixels="True"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{Binding Path=(utilities:ButtonVisuals.HoverBackground), RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{Binding Path=(utilities:ButtonVisuals.PressedBackground), RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="focusBorder" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.PrimaryHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.PrimaryPressed}"/>
+        <Setter Property="Background" Value="{DynamicResource Blueprint.Primary}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnPrimary}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style x:Key="SurfaceButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainerHigh}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.SuccessHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.SuccessPressed}"/>
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SuccessContainer}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSuccessContainer}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.SuccessOutline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style x:Key="ToolbarIconButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="Width" Value="42"/>
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <Style x:Key="SmallButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Padding" Value="12,0"/>
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainer}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style x:Key="SmallIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SmallButtonStyle}">
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.DangerBackground}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.Danger}"/>
+        <Setter Property="utilities:ButtonVisuals.HoverBackground" Value="{DynamicResource Blueprint.DangerHover}"/>
+        <Setter Property="utilities:ButtonVisuals.PressedBackground" Value="{DynamicResource Blueprint.DangerPressed}"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <Style x:Key="DangerIconButtonStyle" TargetType="Button" BasedOn="{StaticResource DangerButtonStyle}">
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <!-- Default button contract for screens without a specialized style. -->
+    <Style TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+</ResourceDictionary>

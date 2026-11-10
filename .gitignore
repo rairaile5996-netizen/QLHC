@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/.vs/
+**/publish/
+*.user
+*.log
+*.pdb
+App_Data/
+BuildCache/
+Backups/
+Publish/
+GitHubSource/

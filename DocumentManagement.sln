@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentManagement", "DocumentManagement\DocumentManagement.csproj", "{C610E105-B7E3-4E06-ABAF-FC72D13AB73D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentManagement.Tests", "DocumentManagement.Tests\DocumentManagement.Tests.csproj", "{3E57F815-22AF-4557-8278-24B83F732D89}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C610E105-B7E3-4E06-ABAF-FC72D13AB73D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C610E105-B7E3-4E06-ABAF-FC72D13AB73D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C610E105-B7E3-4E06-ABAF-FC72D13AB73D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C610E105-B7E3-4E06-ABAF-FC72D13AB73D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E57F815-22AF-4557-8278-24B83F732D89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E57F815-22AF-4557-8278-24B83F732D89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E57F815-22AF-4557-8278-24B83F732D89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E57F815-22AF-4557-8278-24B83F732D89}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

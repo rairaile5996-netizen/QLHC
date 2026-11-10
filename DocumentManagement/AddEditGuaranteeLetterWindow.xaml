@@ -1,0 +1,259 @@
+<Window x:Class="DocumentManagement.AddEditGuaranteeLetterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:models="clr-namespace:DocumentManagement.Models"
+        mc:Ignorable="d"
+        Title="{Binding Title}"
+        Width="680"
+        Height="680"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+    <Window.Resources>
+        <Style x:Key="GuaranteeEditorComboBoxStyle"
+               TargetType="ComboBox"
+               BasedOn="{StaticResource MaterialDesignComboBox}">
+            <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainer}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="MinHeight" Value="42"/>
+        </Style>
+        <Style x:Key="GuaranteeComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Blueprint.PrimaryContainer}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Border CornerRadius="12"
+            Background="{DynamicResource Blueprint.Surface}"
+            BorderBrush="{DynamicResource Blueprint.Outline}"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="28,24,28,20">
+                <StackPanel Margin="0,0,42,0">
+                <TextBlock Text="{Binding Title}"
+                           FontFamily="{DynamicResource Blueprint.Font.Header}"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                <TextBlock Text="Lưu ý: tạo mới và tu chỉnh bắt buộc có PDF; chỉnh sửa có thể giữ nguyên PDF đã sao chép."
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                           TextWrapping="Wrap"/>
+                </StackPanel>
+                <Button HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Width="32"
+                        Height="32"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="Cancel_Click"
+                        Cursor="Hand">
+                    <materialDesign:PackIcon Kind="Close"
+                                             Width="18"
+                                             Height="18"
+                                             Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                </Button>
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" Margin="28,0,28,0" VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Row="0" Grid.Column="0"
+                                Visibility="{Binding IsRelationSelectionVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Liên kết đến" Style="{StaticResource RequiredFieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding RelationOptions}"
+                                  SelectedItem="{Binding SelectedRelation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource GuaranteeEditorComboBoxStyle}"
+                                  ItemContainerStyle="{StaticResource GuaranteeComboBoxItemStyle}"
+                                  IsEnabled="{Binding AllowRelationChange}"
+                                  MinHeight="42"
+                                  TextSearch.TextPath="Label">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Label}"
+                                               Foreground="{DynamicResource Blueprint.OnSurface}"
+                                               VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="2">
+                        <TextBlock Text="Loại bảo lãnh" Style="{StaticResource RequiredFieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding TypeOptions}"
+                                  SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Value"
+                                  Style="{StaticResource GuaranteeEditorComboBoxStyle}"
+                                  MinHeight="42"
+                                  TextSearch.TextPath="Label">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                                        <Setter Property="Opacity" Value="0.55"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem" BasedOn="{StaticResource GuaranteeComboBoxItemStyle}">
+                                    <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,16,0,0">
+                        <TextBlock Text="Số bảo lãnh" Style="{StaticResource RequiredFieldLabel}"/>
+                        <TextBox Text="{Binding LetterNumber, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource ModernTextBox}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,16,0,0">
+                        <TextBlock Text="Ngân hàng phát hành" Style="{StaticResource RequiredFieldLabel}"/>
+                        <TextBox Text="{Binding IssuingBank, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource ModernTextBox}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,16,0,0">
+                        <TextBlock Text="Giá trị bảo lãnh" Style="{StaticResource RequiredFieldLabel}"/>
+                        <TextBox Text="{Binding GuaranteeValueText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource ModernTextBox}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,16,0,0">
+                        <TextBlock Text="Ngày phát hành" Style="{StaticResource RequiredFieldLabel}"/>
+                        <DatePicker SelectedDate="{Binding IssueDate}"
+                                    Background="{DynamicResource Blueprint.SurfaceContainer}"
+                                    Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,16,0,0">
+                        <TextBlock Text="Ngày hiệu lực" Style="{StaticResource RequiredFieldLabel}"/>
+                        <DatePicker SelectedDate="{Binding EffectiveDate}"
+                                    Background="{DynamicResource Blueprint.SurfaceContainer}"
+                                    Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,16,0,0">
+                        <TextBlock Text="Ngày hết hạn" Style="{StaticResource RequiredFieldLabel}"/>
+                        <DatePicker SelectedDate="{Binding ExpiryDate}"
+                                    Background="{DynamicResource Blueprint.SurfaceContainer}"
+                                    Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,16,0,0">
+                        <TextBlock Text="PDF bảo lãnh" Style="{StaticResource RequiredFieldLabel}"/>
+                        <Border Padding="14"
+                                CornerRadius="12"
+                                Background="{DynamicResource Blueprint.SurfaceBright}"
+                                BorderBrush="{DynamicResource Blueprint.Outline}"
+                                BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding PdfStatusText}"
+                                               Foreground="{DynamicResource Blueprint.OnSurface}"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding ExistingPdfSummary}"
+                                               Margin="0,6,0,0"
+                                               Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Margin="16,0,0,0"
+                                        Padding="16,0"
+                                        Height="38"
+                                        Click="BrowsePdf_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FilePdfBox" Width="18" Height="18"/>
+                                        <TextBlock Text="Chọn PDF" Margin="8,0,0,0" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,16,0,0">
+                        <TextBlock Text="Ghi chú" Style="{StaticResource RequiredFieldLabel}"/>
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource ModernTextBox}"
+                                 AcceptsReturn="True"
+                                 MinHeight="100"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+
+            <StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="28,20,28,24">
+                <Button Width="120"
+                        Margin="0,0,12,0"
+                        Click="Cancel_Click"
+                        Style="{StaticResource SecondaryButtonStyle}">
+                    <TextBlock Text="Hủy" FontWeight="SemiBold"/>
+                </Button>
+                <Button Width="160"
+                        Click="Save_Click"
+                        Style="{StaticResource PrimaryButtonStyle}">
+                    <TextBlock Text="{Binding SubmitText}" FontWeight="SemiBold"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

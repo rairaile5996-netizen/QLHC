@@ -1,0 +1,410 @@
+<UserControl x:Class="DocumentManagement.Views.GuaranteeLettersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:models="clr-namespace:DocumentManagement.Models"
+             xmlns:viewModels="clr-namespace:DocumentManagement.ViewModels"
+             mc:Ignorable="d">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Margin="0,0,0,16"
+                Padding="18"
+                CornerRadius="14"
+                Background="{DynamicResource Blueprint.SurfaceBright}"
+                BorderBrush="{DynamicResource Blueprint.Outline}"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Thư bảo lãnh"
+                               FontFamily="{DynamicResource Blueprint.Font.Header}"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="{Binding TextPrimaryColor}"/>
+                    <TextBlock Text="Quản lý bảo lãnh gốc, tu chỉnh, PDF và các trạng thái giải tỏa/hủy ngay trong hồ sơ."
+                               Margin="0,6,0,0"
+                               Foreground="{Binding TextSecondaryColor}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
+                    <Button Command="{Binding OpenAddGuaranteeCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Plus" Width="16" Height="16"/>
+                            <TextBlock Text="Thêm bảo lãnh" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding EditGuaranteeCommand}"
+                            CommandParameter="{Binding SelectedGuaranteeRow}"
+                            IsEnabled="{Binding CanEditSelectedGuarantee}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16"/>
+                            <TextBlock Text="Chỉnh sửa" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding AmendGuaranteeCommand}"
+                            CommandParameter="{Binding SelectedGuaranteeRow}"
+                            IsEnabled="{Binding CanAmendSelectedGuarantee}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FileDocumentEditOutline" Width="16" Height="16"/>
+                            <TextBlock Text="Thêm tu chỉnh" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding OpenGuaranteePdfCommand}"
+                            CommandParameter="{Binding SelectedGuaranteeRow}"
+                            IsEnabled="{Binding CanOpenSelectedGuaranteePdf}"
+                            Style="{StaticResource SurfaceButtonStyle}"
+                            Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FilePdfBox" Width="16" Height="16"/>
+                            <TextBlock Text="Mở PDF" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ReleaseGuaranteeCommand}"
+                            CommandParameter="{Binding SelectedGuaranteeRow}"
+                            IsEnabled="{Binding CanResolveSelectedGuarantee}"
+                            Style="{StaticResource SuccessButtonStyle}"
+                            Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CheckCircleOutline" Width="16" Height="16"/>
+                            <TextBlock Text="Giải tỏa" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding CancelGuaranteeCommand}"
+                            CommandParameter="{Binding SelectedGuaranteeRow}"
+                            IsEnabled="{Binding CanResolveSelectedGuarantee}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CloseCircleOutline" Width="16" Height="16"/>
+                            <TextBlock Text="Hủy" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding DeleteGuaranteeCommand}"
+                            CommandParameter="{Binding SelectedGuaranteeRow}"
+                            IsEnabled="{Binding CanDeleteSelectedGuarantee}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Foreground="{DynamicResource Blueprint.Error}"
+                            Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
+                            <TextBlock Text="Xóa thư" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Border Visibility="{Binding HasGuaranteeRecords, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                    Padding="32"
+                    CornerRadius="16"
+                    Background="{DynamicResource Blueprint.SurfaceBright}"
+                    BorderBrush="{DynamicResource Blueprint.Outline}"
+                    BorderThickness="1">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="ShieldOutline" Width="54" Height="54" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Chưa có thư bảo lãnh cho hồ sơ này."
+                               Margin="0,16,0,0"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource Blueprint.OnSurface}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Thêm bảo lãnh gốc hoặc chọn một phụ lục để bắt đầu theo dõi chuỗi bảo lãnh."
+                               Margin="0,8,0,0"
+                               Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <ListBox x:Name="GuaranteeListBox"
+                     ItemsSource="{Binding GuaranteeRows}"
+                     SelectedItem="{Binding SelectedGuaranteeRow, Mode=TwoWay}"
+                     Visibility="{Binding HasGuaranteeRecords, Converter={StaticResource BooleanToVisibilityConverter}}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     SelectionChanged="GuaranteeListBox_SelectionChanged"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Focusable" Value="False"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Kind}" Value="{x:Static viewModels:GuaranteeListRowKind.Record}">
+                                <Setter Property="Focusable" Value="True"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Kind}" Value="{x:Static viewModels:GuaranteeListRowKind.RelationHeader}">
+                                <Setter Property="IsHitTestVisible" Value="False"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Kind}" Value="{x:Static viewModels:GuaranteeListRowKind.ChainHeader}">
+                                <Setter Property="IsHitTestVisible" Value="True"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type viewModels:GuaranteeListRow}">
+                        <Grid>
+                            <Border x:Name="RelationHeaderCard"
+                                    Visibility="Collapsed"
+                                    Margin="0,0,0,10"
+                                    Padding="14,10"
+                                    CornerRadius="12"
+                                    Background="{DynamicResource Blueprint.SurfaceBright}"
+                                    BorderBrush="{DynamicResource Blueprint.Outline}"
+                                    BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Title}"
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Subtitle}"
+                                               Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                </Grid>
+                            </Border>
+
+                            <Border x:Name="ChainHeaderCard"
+                                    Visibility="Collapsed"
+                                    Margin="0,0,0,8"
+                                    Padding="10,8"
+                                    CornerRadius="10"
+                                    Background="{DynamicResource Blueprint.SurfaceContainerHigh}"
+                                    Cursor="Hand"
+                                    ToolTip="Mở hoặc thu gọn các thư tu chỉnh"
+                                    MouseLeftButtonDown="ChainHeaderCard_MouseLeftButtonDown">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <materialDesign:PackIcon Kind="LinkVariant" Width="16" Height="16" Foreground="{DynamicResource Blueprint.Primary}" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                                        <TextBlock Text="{Binding Subtitle}" Margin="0,3,0,0" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                    </StackPanel>
+                                    <materialDesign:PackIcon x:Name="ChainExpandIcon"
+                                                             Grid.Column="2"
+                                                             Kind="ChevronRight"
+                                                             Width="18"
+                                                             Height="18"
+                                                             Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"
+                                                             VerticalAlignment="Center"/>
+
+                                    <Border Grid.Row="1"
+                                            Grid.ColumnSpan="3"
+                                            Margin="24,10,0,0"
+                                            Padding="0,8,0,0"
+                                            BorderBrush="{DynamicResource Blueprint.Outline}"
+                                            BorderThickness="0,1,0,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Đang áp dụng: " Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                                <TextBlock Text="{Binding CurrentLetterNumber}" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                                                <TextBlock Text="  •  " Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                                <TextBlock Text="Hết hạn " Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                                <TextBlock Text="{Binding CurrentDateDisplay}" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                                            </StackPanel>
+                                            <Border x:Name="ChainStatusBadge"
+                                                    Grid.Column="2"
+                                                    Padding="9,3"
+                                                    CornerRadius="10"
+                                                    Background="{DynamicResource Blueprint.SurfaceBright}">
+                                                <TextBlock x:Name="ChainStatusText"
+                                                           Text="{Binding CurrentStatusDisplay}"
+                                                           FontSize="11"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <Border x:Name="RecordCard"
+                                    Visibility="Collapsed"
+                                    Margin="{Binding IndentMargin}"
+                                    HorizontalAlignment="Stretch"
+                                    MinHeight="148"
+                                    Padding="18"
+                                    CornerRadius="14"
+                                    BorderThickness="1"
+                                    Background="{DynamicResource Blueprint.SurfaceBright}"
+                                    BorderBrush="{DynamicResource Blueprint.Outline}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Row="0" Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding LetterNumber}"
+                                                       FontFamily="{DynamicResource Blueprint.Font.Header}"
+                                                       FontSize="15"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                                            <Border Margin="10,0,0,0"
+                                                    Padding="8,3"
+                                                    CornerRadius="10"
+                                                    Background="{DynamicResource Blueprint.PrimaryContainer}">
+                                                <TextBlock Text="{Binding AmendmentBadgeText}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Blueprint.Primary}"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding TypeDisplay}"
+                                                   Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                    </StackPanel>
+
+                                    <Border x:Name="StatusBadge"
+                                            Grid.Row="0"
+                                            Grid.Column="1"
+                                            Padding="10,4"
+                                            CornerRadius="12"
+                                            Background="{DynamicResource Blueprint.SurfaceBright}">
+                                        <TextBlock x:Name="StatusBadgeText"
+                                                   Text="{Binding StatusDisplay}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource Blueprint.OnSurface}"/>
+                                    </Border>
+
+                                    <Border Grid.Row="1"
+                                            Grid.ColumnSpan="2"
+                                            Margin="0,16,0,0"
+                                            Padding="0,14,0,0"
+                                            BorderBrush="{DynamicResource Blueprint.Outline}"
+                                            BorderThickness="0,1,0,0">
+                                        <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2.6*" MinWidth="220"/>
+                                            <ColumnDefinition Width="1.1*" MinWidth="120"/>
+                                            <ColumnDefinition Width="1.6*" MinWidth="170"/>
+                                            <ColumnDefinition Width="1.2*" MinWidth="125"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding BankDisplay}" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding RelationLabel}" Margin="0,4,0,0" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Giá trị" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                            <TextBlock Text="{Binding ValueDisplay}" Margin="0,4,0,0" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Hiệu lực → Hết hạn" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                            <TextBlock Text="{Binding DateDisplay}" Margin="0,4,0,0" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3">
+                                            <TextBlock Text="PDF" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                            <TextBlock x:Name="PdfStatusText"
+                                                       Text="{Binding PdfStatusText}"
+                                                       Margin="0,4,0,0"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Blueprint.OnSurface}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <TextBlock Grid.Row="2"
+                                               Grid.ColumnSpan="2"
+                                               Margin="0,16,0,0"
+                                               Text="{Binding LifecycleDisplay}"
+                                               Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Kind}" Value="{x:Static viewModels:GuaranteeListRowKind.RelationHeader}">
+                                <Setter TargetName="RelationHeaderCard" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Kind}" Value="{x:Static viewModels:GuaranteeListRowKind.ChainHeader}">
+                                <Setter TargetName="ChainHeaderCard" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Kind}" Value="{x:Static viewModels:GuaranteeListRowKind.Record}">
+                                <Setter TargetName="RecordCard" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                <Setter TargetName="ChainExpandIcon" Property="Kind" Value="ChevronDown"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                <Setter TargetName="RecordCard" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/>
+                                <Setter TargetName="RecordCard" Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsPdfMissing}" Value="True">
+                                <Setter TargetName="PdfStatusText" Property="Foreground" Value="{DynamicResource Blueprint.Error}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:GuaranteeAlertSeverity.Warning}">
+                                <Setter TargetName="StatusBadge" Property="Background" Value="{DynamicResource Blueprint.WarningContainer}"/>
+                                <Setter TargetName="StatusBadgeText" Property="Foreground" Value="{DynamicResource Blueprint.Warning}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:GuaranteeAlertSeverity.Urgent}">
+                                <Setter TargetName="StatusBadge" Property="Background" Value="{DynamicResource Blueprint.ErrorContainer}"/>
+                                <Setter TargetName="StatusBadgeText" Property="Foreground" Value="{DynamicResource Blueprint.Error}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:GuaranteeAlertSeverity.Overdue}">
+                                <Setter TargetName="StatusBadge" Property="Background" Value="#4C1D1D"/>
+                                <Setter TargetName="StatusBadgeText" Property="Foreground" Value="#FCA5A5"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentSeverity}" Value="{x:Static models:GuaranteeAlertSeverity.Warning}">
+                                <Setter TargetName="ChainStatusBadge" Property="Background" Value="{DynamicResource Blueprint.WarningContainer}"/>
+                                <Setter TargetName="ChainStatusText" Property="Foreground" Value="{DynamicResource Blueprint.Warning}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentSeverity}" Value="{x:Static models:GuaranteeAlertSeverity.Urgent}">
+                                <Setter TargetName="ChainStatusBadge" Property="Background" Value="{DynamicResource Blueprint.ErrorContainer}"/>
+                                <Setter TargetName="ChainStatusText" Property="Foreground" Value="{DynamicResource Blueprint.Error}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentSeverity}" Value="{x:Static models:GuaranteeAlertSeverity.Overdue}">
+                                <Setter TargetName="ChainStatusBadge" Property="Background" Value="#4C1D1D"/>
+                                <Setter TargetName="ChainStatusText" Property="Foreground" Value="#FCA5A5"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,17 @@
+<Window x:Class="DocumentManagement.Views.ConstructionDirectiveEditorWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Thông tin chỉ thị" Width="560" Height="510" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Language="vi-VN" FontFamily="{DynamicResource Blueprint.Font.Body}" FontSize="{DynamicResource Blueprint.FontSize.Body}"
+ Background="{DynamicResource Blueprint.SurfaceContainer}" Foreground="{DynamicResource Blueprint.OnSurface}">
+ <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Styles/ConstructionDirectivesStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
+ <Grid Margin="28"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+ <StackPanel>
+ <TextBlock Text="Thông tin chỉ thị" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="{DynamicResource Blueprint.FontSize.Display}" FontWeight="Bold" Margin="0,0,0,8"/>
+ <TextBlock Text="{Binding OriginalFileName}" TextWrapping="Wrap" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,0,0,18"/>
+ <TextBlock Text="Số chỉ thị *"/><TextBox Text="{Binding Number, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,14"/>
+ <TextBlock Text="Tên chỉ thị *"/><TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="True" Height="64" Margin="0,4,0,14"/>
+ <TextBlock Text="Ngày nhận"/><DatePicker x:Name="ReceivedPicker" SelectedDate="{Binding ReceivedDate, Mode=TwoWay}" SelectedDateFormat="Short" Height="44" Margin="0,4,0,0"/>
+ <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{DynamicResource Blueprint.Error}" Margin="0,16,0,0"/>
+ </StackPanel>
+ <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"><Button Content="Hủy" IsCancel="True" Margin="0,0,12,0"/><Button Content="Lưu chỉ thị" Style="{StaticResource DirectivePrimaryButton}" IsDefault="True" Click="Save_Click"/></StackPanel>
+ </Grid>
+</Window>

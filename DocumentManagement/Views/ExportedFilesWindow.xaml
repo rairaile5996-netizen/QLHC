@@ -1,0 +1,206 @@
+<Window x:Class="DocumentManagement.Views.ExportedFilesWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+ xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+ Title="Hồ sơ đã tạo" Width="1020" Height="606" MinWidth="920" MinHeight="540"
+ WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResizeWithGrip"
+ Background="{DynamicResource Blueprint.SurfaceContainer}" Foreground="{DynamicResource Blueprint.OnSurface}" FontFamily="Segoe UI" FontSize="12"
+ UseLayoutRounding="True" SnapsToDevicePixels="True">
+ <shell:WindowChrome.WindowChrome>
+  <shell:WindowChrome CaptionHeight="78" ResizeBorderThickness="6" CornerRadius="11" GlassFrameThickness="0" UseAeroCaptionButtons="False"/>
+ </shell:WindowChrome.WindowChrome>
+ <Window.Resources>
+  <Style x:Key="DarkComboItem" TargetType="ComboBoxItem">
+   <Setter Property="Height" Value="34"/><Setter Property="Padding" Value="12,0"/>
+   <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/><Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/>
+   <Setter Property="VerticalContentAlignment" Value="Center"/>
+   <Style.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="{DynamicResource Blueprint.Selection}"/></Trigger></Style.Triggers>
+  </Style>
+  <Style x:Key="DarkCombo" TargetType="ComboBox">
+   <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ComboBoxPreviewMouseLeftButtonDown"/>
+   <Setter Property="Height" Value="40"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+   <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainer}"/><Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/>
+   <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboItem}"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox">
+    <Grid>
+     <Border x:Name="Box" CornerRadius="7" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+      <Grid><ContentPresenter Content="{TemplateBinding SelectionBoxItem}" Margin="13,0,31,0" VerticalAlignment="Center"/>
+       <md:PackIcon Kind="ChevronDown" Width="15" Height="15" Margin="0,0,10,0" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+      </Grid>
+     </Border>
+     <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
+      <Border Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" Margin="0,4,0,0" Padding="3"
+       Background="{DynamicResource Blueprint.SurfaceBright}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" CornerRadius="7">
+       <ScrollViewer MaxHeight="240"><ItemsPresenter/></ScrollViewer>
+      </Border>
+     </Popup>
+    </Grid>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Box" Property="Opacity" Value=".42"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="IconButton" TargetType="Button">
+   <Setter Property="Width" Value="32"/><Setter Property="Height" Value="30"/><Setter Property="Padding" Value="0"/>
+   <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+    <Border x:Name="Root" CornerRadius="6" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Root" Property="Background" Value="{DynamicResource Blueprint.ButtonHover}"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="Root" Property="Opacity" Value=".75"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Root" Property="Opacity" Value=".35"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="MenuItemStyle" TargetType="MenuItem">
+   <Setter Property="Height" Value="36"/><Setter Property="Padding" Value="11,0"/>
+   <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/><Setter Property="Background" Value="Transparent"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="MenuItem">
+    <Border x:Name="Row" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+     <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+    </Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource Blueprint.Selection}"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".42"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="CenterText" TargetType="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+  <Style TargetType="DataGridColumnHeader">
+   <Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceContainerHigh}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+   <Setter Property="Padding" Value="10,0"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/>
+   <Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Outline}"/><Setter Property="BorderThickness" Value="0,0,0,1"/>
+  </Style>
+  <Style TargetType="DataGridCell">
+   <Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="10,0"/>
+   <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+   <Setter Property="Background" Value="Transparent"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+  </Style>
+  <Style TargetType="DataGridRow">
+   <Setter Property="Height" Value="64"/><Setter Property="Background" Value="{DynamicResource Blueprint.SurfaceBright}"/><Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
+   <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="BorderThickness" Value="3,0,0,0"/>
+   <Style.Triggers>
+    <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource Blueprint.ButtonHover}"/></Trigger>
+    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource Blueprint.Selection}"/><Setter Property="BorderBrush" Value="{DynamicResource Blueprint.Primary}"/></Trigger>
+   </Style.Triggers>
+  </Style>
+ </Window.Resources>
+ <Border BorderBrush="{DynamicResource Blueprint.Primary}" BorderThickness="1" CornerRadius="11" Background="{DynamicResource Blueprint.SurfaceContainer}" ClipToBounds="True">
+  <Grid>
+   <Grid.RowDefinitions><RowDefinition Height="78"/><RowDefinition Height="64"/><RowDefinition Height="*"/><RowDefinition Height="56"/></Grid.RowDefinitions>
+   <Grid Margin="20,0" MouseLeftButtonDown="HeaderMouseLeftButtonDown">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Border Width="44" Height="44" CornerRadius="11" Background="{DynamicResource Blueprint.Primary}" VerticalAlignment="Center">
+     <md:PackIcon Kind="Folder" Width="25" Height="25" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Border>
+    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+     <TextBlock Text="HỒ SƠ ĐÃ TẠO" FontSize="21" FontWeight="SemiBold" Foreground="{DynamicResource Blueprint.OnSurface}"/>
+     <TextBlock Text="Danh sách các hồ sơ đã được tạo từ dự án hiện tại" FontSize="13" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" Margin="0,4,0,0"/>
+    </StackPanel>
+    <Button Grid.Column="2" Style="{StaticResource IconButton}" Background="Transparent" BorderThickness="0"
+     Click="CloseClick" shell:WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Đóng" ToolTip="Đóng"><md:PackIcon Kind="Close" Width="18" Height="18"/></Button>
+   </Grid>
+   <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Background="{DynamicResource Blueprint.Outline}"/>
+   <Grid Grid.Row="1" Margin="20,10">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="174"/>
+     <ColumnDefinition Width="10"/><ColumnDefinition Width="184"/><ColumnDefinition Width="10"/><ColumnDefinition Width="122"/></Grid.ColumnDefinitions>
+    <Grid>
+     <md:PackIcon Kind="Magnify" Width="17" Height="17" Margin="13,0,0,0" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False"/>
+     <TextBox x:Name="SearchBox" TextChanged="FilterChanged" Height="40" Padding="38,0,10,0" VerticalContentAlignment="Center"
+      Background="{DynamicResource Blueprint.SurfaceContainer}" Foreground="{DynamicResource Blueprint.OnSurface}" CaretBrush="{DynamicResource Blueprint.OnSurface}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" FontSize="13"
+      md:HintAssist.Hint="Tìm tên hồ sơ, mã hồ sơ..."/>
+    </Grid>
+    <ComboBox x:Name="CategoryBox" Grid.Column="2" Style="{StaticResource DarkCombo}" SelectedIndex="0" SelectionChanged="CategoryChanged">
+       <ComboBoxItem Content="Tất cả loại hồ sơ"/><ComboBoxItem Content="CVXD"/><ComboBoxItem Content="VTĐV"/><ComboBoxItem Content="PDVT"/><ComboBoxItem Content="HSPL"/><ComboBoxItem Content="Hồ sơ khác"/>
+    </ComboBox>
+    <ComboBox x:Name="StatusBox" Grid.Column="4" Style="{StaticResource DarkCombo}" SelectedIndex="0" SelectionChanged="StatusChanged">
+     <ComboBoxItem Content="Tất cả trạng thái"/><ComboBoxItem Content="Đã tạo"/><ComboBoxItem Content="Không tìm thấy"/>
+    </ComboBox>
+    <ComboBox x:Name="SortBox" Grid.Column="6" Style="{StaticResource DarkCombo}" SelectedIndex="0" SelectionChanged="SortChanged">
+     <ComboBoxItem Content="Mới nhất"/><ComboBoxItem Content="Cũ nhất"/><ComboBoxItem Content="Tên A–Z"/>
+    </ComboBox>
+   </Grid>
+   <Border Grid.Row="2" Margin="20,0" CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource Blueprint.Outline}" Background="{DynamicResource Blueprint.SurfaceContainer}" ClipToBounds="True">
+    <Grid>
+     <DataGrid x:Name="FilesList" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
+      HeadersVisibility="Column" RowHeight="64" ColumnHeaderHeight="42" SelectionMode="Single" SelectionUnit="FullRow"
+      CanUserResizeColumns="False" CanUserReorderColumns="False" CanUserSortColumns="False"
+      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource Blueprint.Outline}" Background="{DynamicResource Blueprint.SurfaceContainer}" BorderThickness="0"
+      MouseDoubleClick="FilesListMouseDoubleClick">
+      <DataGrid.Columns>
+       <DataGridTextColumn Header="STT" Binding="{Binding Number}" Width="46" ElementStyle="{StaticResource CenterText}"/>
+       <DataGridTemplateColumn Header="TÊN HỒ SƠ" Width="387">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel ToolTip="{Binding Path}" VerticalAlignment="Center">
+         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Blueprint.OnSurface}" TextTrimming="CharacterEllipsis"/>
+         <TextBlock Text="{Binding Path}" FontSize="10" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
+        </StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTextColumn Header="MÃ HỒ SƠ" Binding="{Binding Code}" Width="92" ElementStyle="{StaticResource CenterText}"/>
+       <DataGridTemplateColumn Header="ĐỊNH DẠNG" Width="100">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+         <Border Width="24" Height="24" CornerRadius="5" Background="{DynamicResource Blueprint.Primary}"><TextBlock Text="{Binding FormatLetter}" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+         <TextBlock Text="{Binding FormatDisplay}" Margin="7,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}"/>
+        </StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTextColumn Header="NGÀY TẠO" Binding="{Binding Created, StringFormat=dd/MM/yyyy HH:mm}" Width="132" ElementStyle="{StaticResource CenterText}"/>
+       <DataGridTemplateColumn Header="TRẠNG THÁI" Width="116">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate>
+         <Border x:Name="Badge" Height="24" CornerRadius="12" Padding="9,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+          Background="{DynamicResource Blueprint.SuccessContainer}" BorderBrush="{DynamicResource Blueprint.SuccessOutline}" BorderThickness="1">
+          <StackPanel Orientation="Horizontal"><md:PackIcon x:Name="StateIcon" Kind="CheckCircleOutline" Width="14" Height="14" VerticalAlignment="Center" Foreground="{DynamicResource Blueprint.OnSuccessContainer}"/>
+           <TextBlock x:Name="StateText" Text="Đã tạo" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource Blueprint.OnSuccessContainer}"/>
+          </StackPanel>
+         </Border>
+         <DataTemplate.Triggers><DataTrigger Binding="{Binding Exists}" Value="False">
+          <Setter TargetName="Badge" Property="Background" Value="{DynamicResource Blueprint.DangerBackground}"/><Setter TargetName="Badge" Property="BorderBrush" Value="{DynamicResource Blueprint.Danger}"/>
+          <Setter TargetName="StateIcon" Property="Kind" Value="AlertCircleOutline"/><Setter TargetName="StateIcon" Property="Foreground" Value="{DynamicResource Blueprint.Danger}"/>
+          <Setter TargetName="StateText" Property="Text" Value="Thất lạc"/><Setter TargetName="StateText" Property="Foreground" Value="{DynamicResource Blueprint.Danger}"/>
+         </DataTrigger></DataTemplate.Triggers>
+        </DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTemplateColumn Header="THAO TÁC" Width="82">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate>
+         <Button Style="{StaticResource IconButton}" Click="ActionButtonClick"><md:PackIcon Kind="DotsHorizontal" Width="18" Height="18"/>
+          <Button.ContextMenu>
+           <ContextMenu Width="184" Padding="5" Background="{DynamicResource Blueprint.SurfaceContainer}" Foreground="{DynamicResource Blueprint.OnSurface}" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="1" HasDropShadow="True"
+            DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+            <MenuItem Style="{StaticResource MenuItemStyle}" Click="OpenFileClick" IsEnabled="{Binding Exists}"><MenuItem.Header><StackPanel Orientation="Horizontal"><md:PackIcon Kind="FileOutline" Width="16" Height="16" Margin="0,0,10,0"/><TextBlock Text="Mở file"/></StackPanel></MenuItem.Header></MenuItem>
+            <MenuItem Style="{StaticResource MenuItemStyle}" Click="RevealFileClick" IsEnabled="{Binding Exists}"><MenuItem.Header><StackPanel Orientation="Horizontal"><md:PackIcon Kind="FolderOutline" Width="16" Height="16" Margin="0,0,10,0"/><TextBlock Text="Mở thư mục chứa"/></StackPanel></MenuItem.Header></MenuItem>
+            <MenuItem Style="{StaticResource MenuItemStyle}" Click="RenameFileClick" IsEnabled="{Binding Exists}"><MenuItem.Header><StackPanel Orientation="Horizontal"><md:PackIcon Kind="PencilOutline" Width="16" Height="16" Margin="0,0,10,0"/><TextBlock Text="Đổi tên"/></StackPanel></MenuItem.Header></MenuItem>
+            <MenuItem Style="{StaticResource MenuItemStyle}" Click="CopyPathClick"><MenuItem.Header><StackPanel Orientation="Horizontal"><md:PackIcon Kind="LinkVariant" Width="16" Height="16" Margin="0,0,10,0"/><TextBlock Text="Sao chép đường dẫn"/></StackPanel></MenuItem.Header></MenuItem>
+            <Separator Background="{DynamicResource Blueprint.Outline}"/>
+            <MenuItem Style="{StaticResource MenuItemStyle}" IsEnabled="False"><MenuItem.Header><StackPanel Orientation="Horizontal"><md:PackIcon Kind="TrashCanOutline" Width="16" Height="16" Margin="0,0,10,0" Foreground="{DynamicResource Blueprint.Danger}"/><TextBlock Text="Xóa" Foreground="{DynamicResource Blueprint.Danger}"/></StackPanel></MenuItem.Header></MenuItem>
+           </ContextMenu>
+          </Button.ContextMenu>
+         </Button>
+        </DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+      </DataGrid.Columns>
+     </DataGrid>
+     <StackPanel x:Name="EmptyPanel" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+      <Border Width="52" Height="52" CornerRadius="13" Background="{DynamicResource Blueprint.PrimaryContainer}" HorizontalAlignment="Center"><md:PackIcon Kind="FolderOpenOutline" Width="28" Height="28" Foreground="{DynamicResource Blueprint.Primary}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+      <TextBlock x:Name="EmptyTitle" Text="Chưa có hồ sơ nào được tạo" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,13,0,0"/>
+      <TextBlock x:Name="EmptySubtitle" Text="Các hồ sơ đã xuất sẽ xuất hiện tại đây" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+     </StackPanel>
+    </Grid>
+   </Border>
+   <Border Grid.Row="3" BorderBrush="{DynamicResource Blueprint.Outline}" BorderThickness="0,1,0,0">
+    <Grid Margin="20,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock x:Name="TotalLabel" Foreground="{DynamicResource Blueprint.OnSurfaceVariant}" VerticalAlignment="Center"/><TextBlock x:Name="StatusLabel" Foreground="{DynamicResource Blueprint.Danger}" Margin="14,0,0,0" VerticalAlignment="Center"/></StackPanel>
+     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+      <Button x:Name="PreviousButton" Style="{StaticResource IconButton}" Click="PreviousPageClick" AutomationProperties.Name="Trang trước" ToolTip="Trang trước"><md:PackIcon Kind="ChevronLeft" Width="16" Height="16"/></Button>
+      <Border Width="30" Height="32" CornerRadius="6" Background="{DynamicResource Blueprint.Primary}" Margin="6,0"><TextBlock x:Name="PageLabel" Text="1" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+      <Button x:Name="NextButton" Style="{StaticResource IconButton}" Click="NextPageClick" AutomationProperties.Name="Trang sau" ToolTip="Trang sau"><md:PackIcon Kind="ChevronRight" Width="16" Height="16"/></Button>
+      <ComboBox x:Name="PageSizeBox" Width="104" Height="32" Margin="12,0,0,0" SelectedIndex="0" SelectionChanged="PageSizeChanged" Style="{StaticResource DarkCombo}">
+       <ComboBoxItem Content="10 / trang" Tag="10"/><ComboBoxItem Content="20 / trang" Tag="20"/><ComboBoxItem Content="50 / trang" Tag="50"/>
+      </ComboBox>
+     </StackPanel>
+    </Grid>
+   </Border>
+  </Grid>
+ </Border>
+</Window>
