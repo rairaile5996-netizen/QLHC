@@ -270,6 +270,7 @@ public static class PdvtProgress
                 Set(item, PdvtBoqProgress.DaDuyet, "Đã duyệt", "ok", approved.Record);
                 item.ApprovedBrand = approved.Row.NhanHieuPheDuyet;
                 item.ApprovedOrigin = approved.Row.XuatXuDeTrinh;
+                item.ApprovedModel = approved.Row.Model;
                 item.ApprovedDate = approved.Row.ApprovedDate ?? approved.Record.SubmittedDate;
             }
             else
@@ -280,6 +281,7 @@ public static class PdvtProgress
                 Set(item, progress, StatusLabel(latest.Row.Status, submitted), StatusKind(latest.Row.Status, submitted), latest.Record);
                 item.ApprovedBrand = string.Empty;
                 item.ApprovedOrigin = string.Empty;
+                item.ApprovedModel = string.Empty;
                 item.ApprovedDate = null;
             }
             item.ApprovalSummary = item.StatusLabel;
@@ -314,6 +316,7 @@ public static class PdvtProgress
         item.LatestRecordId = string.Empty;
         item.ApprovedBrand = string.Empty;
         item.ApprovedOrigin = string.Empty;
+        item.ApprovedModel = string.Empty;
         item.ApprovedDate = null;
         item.ApprovedPdvtNumbers = string.Empty;
         item.ApprovalSummary = item.StatusLabel;

@@ -15,7 +15,7 @@
     <UserControl.InputBindings>
         <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoCommand}"/>
         <KeyBinding Key="Y" Modifiers="Ctrl" Command="{Binding RedoCommand}"/>
-        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveDataCommand}"/>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveShortcutCommand}"/>
     </UserControl.InputBindings>
 
     <UserControl.Resources>

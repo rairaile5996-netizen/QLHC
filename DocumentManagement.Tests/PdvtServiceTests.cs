@@ -112,6 +112,59 @@ public sealed class PdvtServiceTests
     }
 
     [Fact]
+    public void ExportExcelWritesBoqSectionHeadingsAboveTheirMaterials()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"pdvt-sections-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var template = Path.Combine(root, "sections.xlsx");
+        try
+        {
+            using (var book = new XLWorkbook())
+            {
+                var sheet = book.AddWorksheet("pdvt 01");
+                sheet.Cell(5, 1).Value = "{STT}";
+                sheet.Cell(5, 2).Value = "{NoiDungHD}";
+                sheet.Cell(5, 3).Value = "{DVT}";
+                sheet.Cell(7, 1).Value = "Ký tên";
+                book.SaveAs(template);
+            }
+            PdvtSectionRef dien = new("I", "Hệ thống điện"), tuDien = new("I.1", "Tủ điện"), nhe = new("II", "Điện nhẹ");
+            var record = new PdvtRecord { Number = "PDVT 09", Materials = [
+                new PdvtMaterialRow { NoiDungTheoHd = "Tủ điện bơm", DonViTinh = "tủ", SttBoq = "1", Sections = [dien, tuDien] },
+                new PdvtMaterialRow { NoiDungTheoHd = "Ống điện D20", DonViTinh = "m", SttBoq = "3", Sections = [dien, tuDien] },
+                new PdvtMaterialRow { NoiDungTheoHd = "Ống điện D20", DonViTinh = "m", SttBoq = "1", Sections = [nhe] },
+                new PdvtMaterialRow { NoiDungTheoHd = "Kẹp ống", Source = "Phát sinh" }
+            ] };
+
+            var path = new PdvtService().ExportExcel(record, new Document { FolderPath = root }, templatePath: template);
+
+            using var result = new XLWorkbook(path);
+            var ws = result.Worksheet(1);
+            string Row(int r) => $"{ws.Cell(r, 1).GetString()}|{ws.Cell(r, 2).GetString()}|{ws.Cell(r, 3).GetString()}";
+            Assert.Equal("I|Hệ thống điện|", Row(5));
+            Assert.Equal("I.1|Tủ điện|", Row(6));
+            Assert.Equal("1|Tủ điện bơm|tủ", Row(7));
+            Assert.Equal("3|Ống điện D20|m", Row(8));
+            Assert.Equal("II|Điện nhẹ|", Row(9));          // same name, different section → reader can tell them apart
+            Assert.Equal("1|Ống điện D20|m", Row(10));
+            Assert.Equal("|Phát sinh ngoài BoQ|", Row(11));
+            Assert.Equal("1|Kẹp ống|", Row(12));
+            // Headings bold, materials keep the template's normal weight.
+            Assert.Equal("TTFFTFTF", string.Concat(Enumerable.Range(5, 8).Select(r => ws.Cell(r, 2).Style.Font.Bold ? "T" : "F")));
+            Assert.Equal("Ký tên", ws.Cell(14, 1).GetString());
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void SheetLinesWithoutSectionsStayFlat()
+    {
+        var lines = PdvtService.BuildSheetLines([new PdvtMaterialRow { NoiDung = "A" }, new PdvtMaterialRow { NoiDung = "B" }]);
+        Assert.All(lines, line => Assert.Null(line.Heading));
+        Assert.Equal([1, 2], lines.Select(x => x.Index));
+    }
+
+    [Fact]
     public void ExportSummaryWritesOneRowPerBoqLineWithApprovalState()
     {
         var root = Path.Combine(Path.GetTempPath(), $"pdvt-summary-{Guid.NewGuid():N}");
