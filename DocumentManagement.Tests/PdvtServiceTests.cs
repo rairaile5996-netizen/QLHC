@@ -43,6 +43,34 @@ public sealed class PdvtServiceTests
     }
 
     [Fact]
+    public void ExportSummaryWritesOneRowPerBoqLineWithApprovalState()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"pdvt-summary-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var heading = new PdvtBoqItem { SttBoq = "I", IsHeading = true, HeadingLevel = 1, NoiDung = "Hệ thống điện" };
+            var cable = new PdvtBoqItem { SttBoq = "1", SectionCode = "I", NoiDung = "Cáp điện", NhanHieuTheoHd = "Cadivi", KhoiLuong = 1250 };
+            var socket = new PdvtBoqItem { SttBoq = "2", SectionCode = "I", NoiDung = "Ổ cắm" };
+            var sheet = new PdvtRecord { Number = "PDVT 01", SubmittedDate = new DateTime(2026, 11, 5), Materials =
+                [new PdvtMaterialRow { BoqItemId = cable.Id, Status = PdvtApprovalStatus.DaDuyet, NhanHieuPheDuyet = "Cadivi", XuatXuDeTrinh = "Việt Nam", ApprovedDate = new DateTime(2026, 11, 8) }] };
+            var items = new List<PdvtBoqItem> { heading, cable, socket };
+            PdvtProgress.Apply(items, [sheet]);
+
+            var path = new PdvtService().ExportSummary(items, new Document { FolderPath = root, ContractNumber = "HĐ-01" });
+            using var workbook = new XLWorkbook(path);
+            var ws = workbook.Worksheet(1);
+            Assert.Equal("1/2 đã duyệt", ws.Cell(5, 7).GetString());
+            Assert.Equal("Cáp điện", ws.Cell(6, 2).GetString());
+            Assert.Equal("Đã duyệt", ws.Cell(6, 7).GetString());
+            Assert.Equal("Cadivi", ws.Cell(6, 8).GetString());
+            Assert.Equal("08/11/2026", ws.Cell(6, 11).GetString());
+            Assert.Equal("Chưa lập", ws.Cell(7, 7).GetString());
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void SplitBrandOriginKeepsContractAlternativesSeparateFromOrigin()
     {
         var result = PdvtService.SplitBrandOrigin("Cadisun/Cadivi/Việt Nam", "");
