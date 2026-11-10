@@ -61,6 +61,13 @@ public partial class PdvtBoqItem : ObservableObject
     [JsonIgnore][ObservableProperty] private int _childPending;
     [JsonIgnore][ObservableProperty] private int _childRework;
     [JsonIgnore][ObservableProperty] private int _childUnassigned;
+    /// <summary>BoQ line whose history includes rows first submitted as "phát sinh" and later linked here.</summary>
+    [JsonIgnore][ObservableProperty] private bool _hasLinkedExtra;
+
+    /// <summary>Virtual summary line for a "phát sinh" material that is not (yet) part of the BoQ.</summary>
+    [JsonIgnore] public bool IsExtra { get; set; }
+    [JsonIgnore] public string ExtraKey { get; set; } = string.Empty;
+    [JsonIgnore] public string LinkLabel => string.IsNullOrWhiteSpace(SttBoq) ? NoiDung : $"{SttBoq} · {NoiDung}";
 
     [JsonIgnore] public string BrandOriginDisplay => string.Join(" · ", new[] { NhanHieuTheoHd, XuatXuTheoHd }.Where(x => !string.IsNullOrWhiteSpace(x)));
     [JsonIgnore] public string SpecLine => string.Join(" · ", new[] { ThongSoKyThuat, BrandOriginDisplay }.Where(x => !string.IsNullOrWhiteSpace(x)));
@@ -76,6 +83,9 @@ public partial class PdvtMaterialRow : ObservableObject
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Source { get; set; } = "BoQ";
     public string BoqItemId { get; set; } = string.Empty;
+    /// <summary>Identity of a "phát sinh" material across rounds (the Id of the row that first introduced it).</summary>
+    public string ExtraKey { get; set; } = string.Empty;
+    [JsonIgnore] public string LineKey => string.IsNullOrEmpty(ExtraKey) ? Id : ExtraKey;
     [ObservableProperty] private string _noiDung = string.Empty;
     [ObservableProperty] private string _thongSoKyThuat = string.Empty;
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsBrandDiff), nameof(IsDiff))] private string _nhanHieuTheoHd = string.Empty;

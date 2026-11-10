@@ -268,6 +268,8 @@
         <!-- KPI tile (summary). Tag = accent brush. -->
         <Style x:Key="Pdvt.Kpi" TargetType="RadioButton">
             <Setter Property="Cursor" Value="Hand"/>
+            <!-- MaterialDesign's RadioButton foreground does not follow the Blueprint dark theme. -->
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Margin" Value="0,0,12,0"/>
             <Setter Property="Template">
@@ -688,6 +690,7 @@
 
         <!-- Sheet list card -->
         <Style x:Key="Pdvt.Card" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource Blueprint.OnSurface}"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -784,12 +787,21 @@
                 </Border>
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Command="{Binding ImportBoqCommand}" Style="{StaticResource Pdvt.BtnGhost}" Margin="0,0,8,0"
-                            ToolTip="Đọc danh mục vật tư từ file BoQ hợp đồng">
+                    <Button Style="{StaticResource Pdvt.BtnGhost}" Margin="0,0,8,0" Click="ShowMenu_Click"
+                            ToolTip="Nạp BoQ hợp đồng hoặc bổ sung phụ lục">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="FileImportOutline" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Nạp BoQ Excel"/>
+                            <Path Data="M 0 0 L 4 4 L 8 0 Z" Width="8" Height="4" Margin="8,1,0,0" VerticalAlignment="Center"
+                                  Fill="{DynamicResource Blueprint.OnSurfaceVariant}"/>
                         </StackPanel>
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Nạp BoQ hợp đồng (thay thế BoQ hiện có)" Command="{Binding ImportBoqCommand}"/>
+                                <MenuItem Header="Nạp phụ lục (bổ sung vào BoQ)" Command="{Binding ImportAppendixCommand}"
+                                          ToolTip="Thêm nhóm PL1, PL2… và tự gắn vật tư phát sinh trùng tên"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
                     </Button>
                     <!-- Records view -->
                     <Button Command="{Binding NewCommand}" Style="{StaticResource Pdvt.BtnPrimary}"
@@ -1049,7 +1061,7 @@
                                     </Button>
                                 </StackPanel>
 
-                                <Button x:Name="MoreButton" Style="{StaticResource Pdvt.BtnIcon}" Click="MoreButton_Click" ToolTip="Thao tác khác">
+                                <Button x:Name="MoreButton" Style="{StaticResource Pdvt.BtnIcon}" Click="ShowMenu_Click" ToolTip="Thao tác khác">
                                     <materialDesign:PackIcon Kind="DotsHorizontal" Width="18" Height="18"/>
                                     <Button.ContextMenu>
                                         <ContextMenu>
@@ -1454,7 +1466,7 @@
 
             <!-- BoQ drawer (screen B) -->
             <Grid Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding IsBoqDrawerOpen, Converter={StaticResource BoolVis}}">
-                <Border Background="{DynamicResource Blueprint.OnSurface}" Opacity="0.14">
+                <Border Background="Black" Opacity="0.28">
                     <Border.InputBindings>
                         <MouseBinding MouseAction="LeftClick" Command="{Binding CloseDrawerCommand}"/>
                     </Border.InputBindings>
@@ -1643,7 +1655,7 @@
                                  IsChecked="{Binding SummaryFilter, Converter={StaticResource IsEqual}, ConverterParameter=all}">
                         <StackPanel>
                             <TextBlock Text="{Binding KpiTotal}" FontSize="22" FontWeight="ExtraBold"/>
-                            <TextBlock Text="Tổng vật tư BoQ" Style="{StaticResource Pdvt.Muted}"/>
+                            <TextBlock Text="{Binding KpiTotalLabel}" Style="{StaticResource Pdvt.Muted}"/>
                         </StackPanel>
                     </RadioButton>
                 </UniformGrid>
@@ -1752,7 +1764,23 @@
                                 <DataGridTemplateColumn Header="Nhãn hiệu · xuất xứ HĐ" Width="1.2*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding BrandOriginDisplay}" TextWrapping="Wrap" FontWeight="Normal"/>
+                                            <Grid>
+                                                <TextBlock x:Name="Brand" Text="{Binding BrandOriginDisplay}" TextWrapping="Wrap" FontWeight="Normal"/>
+                                                <Border x:Name="ExtraTag" Style="{StaticResource Pdvt.DiffTag}" Margin="0,1,0,0" Visibility="Collapsed"
+                                                        ToolTip="Vật tư trình ngoài BoQ; gắn vào dòng phụ lục ở bảng chi tiết bên phải khi đã có phụ lục">
+                                                    <TextBlock Text="NGOÀI BOQ"/>
+                                                </Border>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsExtra}" Value="True"/>
+                                                        <Condition Binding="{Binding IsHeading}" Value="False"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter TargetName="Brand" Property="Visibility" Value="Collapsed"/>
+                                                    <Setter TargetName="ExtraTag" Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -1871,6 +1899,38 @@
 
                         <!-- Actions -->
                         <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                            <!-- "Phát sinh" → BoQ / appendix line -->
+                            <Border CornerRadius="8" BorderThickness="1" Padding="12,10" Margin="0,0,0,10"
+                                    Background="{DynamicResource Blueprint.SurfaceContainer}" BorderBrush="{DynamicResource Blueprint.Warning}"
+                                    Visibility="{Binding IsExtra, Converter={StaticResource BoolVis}}">
+                                <StackPanel>
+                                    <TextBlock Text="Đã có trong phụ lục / BoQ?" FontWeight="Bold" Margin="0,0,0,3"/>
+                                    <TextBlock Style="{StaticResource Pdvt.Muted}" Margin="0,0,0,8"
+                                               Text="Gắn vào dòng tương ứng để lịch sử và kết quả duyệt chuyển sang dòng đó. Nạp phụ lục qua nút &quot;Nạp BoQ Excel&quot;."/>
+                                    <ComboBox Style="{StaticResource ModernComboBox}" Height="36" Padding="10,0" FontSize="12.5" VerticalContentAlignment="Center"
+                                              ItemsSource="{Binding Data.LinkCandidates, Source={StaticResource Vm}}"
+                                              SelectedItem="{Binding Data.LinkTarget, Source={StaticResource Vm}, Mode=TwoWay}"
+                                              DisplayMemberPath="LinkLabel" IsTextSearchEnabled="True" TextSearch.TextPath="NoiDung"
+                                              materialDesign:HintAssist.Hint="Chọn dòng phụ lục / BoQ…"
+                                              ToolTip="Chỉ liệt kê dòng chưa lập phiếu; dòng phụ lục ở đầu danh sách. Gõ tên để tìm nhanh."/>
+                                    <Button Command="{Binding Data.LinkExtraCommand, Source={StaticResource Vm}}" Style="{StaticResource Pdvt.Btn}"
+                                            HorizontalAlignment="Stretch" Margin="0,8,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="LinkVariant" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Gắn vào dòng đã chọn"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                            <Button Style="{StaticResource Pdvt.Btn}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                    Command="{Binding Data.UnlinkExtrasCommand, Source={StaticResource Vm}}" CommandParameter="{Binding}"
+                                    Visibility="{Binding HasLinkedExtra, Converter={StaticResource BoolVis}}"
+                                    ToolTip="Đưa các lần trình dạng phát sinh về lại nhóm Phát sinh ngoài BoQ">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="LinkVariantOff" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Tách vật tư phát sinh khỏi dòng này"/>
+                                </StackPanel>
+                            </Button>
                             <Button Style="{StaticResource Pdvt.Btn}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
                                     Command="{Binding Data.OpenRecordByIdCommand, Source={StaticResource Vm}}" CommandParameter="{Binding LatestRecordId}"
                                     Visibility="{Binding LatestRecordId, Converter={StaticResource EqVis}, ConverterParameter=!}">
@@ -1898,8 +1958,16 @@
                             <StackPanel>
                                 <TextBlock Text="CHI TIẾT VẬT TƯ" Style="{StaticResource Pdvt.Label}"/>
                                 <TextBlock Text="{Binding NoiDung}" FontFamily="{DynamicResource Blueprint.Font.Header}" FontSize="15" FontWeight="ExtraBold"
-                                           TextWrapping="Wrap" Margin="0,2,0,12"/>
-                                <Grid>
+                                           TextWrapping="Wrap" Margin="0,2,0,6"/>
+                                <Border Style="{StaticResource Pdvt.DiffTag}" Margin="0,0,0,6"
+                                        Visibility="{Binding IsExtra, Converter={StaticResource BoolVis}}">
+                                    <TextBlock Text="PHÁT SINH NGOÀI BOQ"/>
+                                </Border>
+                                <Border Style="{StaticResource Pdvt.DiffTag}" Margin="0,0,0,6"
+                                        Visibility="{Binding HasLinkedExtra, Converter={StaticResource BoolVis}}">
+                                    <TextBlock Text="CÓ LẦN TRÌNH DẠNG PHÁT SINH"/>
+                                </Border>
+                                <Grid Margin="0,6,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="104"/>
                                         <ColumnDefinition Width="*"/>

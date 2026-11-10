@@ -8,8 +8,8 @@ public partial class PdvtView : UserControl
 {
     public PdvtView() => InitializeComponent();
 
-    /// <summary>Opens the "⋯" menu under the button on a normal left click.</summary>
-    private void MoreButton_Click(object sender, RoutedEventArgs e)
+    /// <summary>Opens a button's context menu under it on a normal left click.</summary>
+    private void ShowMenu_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { ContextMenu: { } menu } button) return;
         menu.PlacementTarget = button;

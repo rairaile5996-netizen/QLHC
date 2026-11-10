@@ -76,11 +76,132 @@ public static class PdvtProgress
         return !accepted.Contains(target);
     }
 
-    public static bool Matches(PdvtMaterialRow material, PdvtBoqItem item) =>
-        material.BoqItemId == item.Id ||
-        (string.IsNullOrEmpty(material.BoqItemId) &&
-         string.Equals(material.NoiDung, item.NoiDung, StringComparison.CurrentCultureIgnoreCase) &&
-         string.Equals(material.ThongSoKyThuat, item.ThongSoKyThuat, StringComparison.CurrentCultureIgnoreCase));
+    public static bool Matches(PdvtMaterialRow material, PdvtBoqItem item)
+    {
+        if (item.IsExtra) return material.IsExtra && material.LineKey == item.ExtraKey;
+        if (material.BoqItemId == item.Id) return true;
+        // Legacy BoQ rows saved before BoqItemId existed; "phát sinh" rows only match once linked.
+        return string.IsNullOrEmpty(material.BoqItemId) && !material.IsExtra &&
+               string.Equals(material.NoiDung, item.NoiDung, StringComparison.CurrentCultureIgnoreCase) &&
+               string.Equals(material.ThongSoKyThuat, item.ThongSoKyThuat, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    public const string ExtraSectionCode = "PS";
+    private static readonly System.Text.RegularExpressions.Regex AppendixCode = new(@"^PL\d+(\.|$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    public static bool IsAppendixItem(PdvtBoqItem item) =>
+        AppendixCode.IsMatch(item.IsHeading ? item.SttBoq : item.SectionCode);
+
+    /// <summary>
+    /// Builds the summary lines for "phát sinh" materials that are not linked to a BoQ line, grouped under a "PS" heading.
+    /// Existing objects in <paramref name="cache"/> are reused so ticks survive a recompute.
+    /// </summary>
+    public static List<PdvtBoqItem> BuildExtraItems(IReadOnlyList<PdvtBoqItem> boq, IReadOnlyList<PdvtRecord> records, IDictionary<string, PdvtBoqItem>? cache = null)
+    {
+        var boqIds = boq.Where(x => !x.IsHeading).Select(x => x.Id).ToHashSet();
+        var rows = records
+            .OrderBy(r => r.Date).ThenBy(r => r.Version)
+            .SelectMany(r => r.Materials)
+            .Where(m => m.IsExtra && (string.IsNullOrEmpty(m.BoqItemId) || !boqIds.Contains(m.BoqItemId)))
+            .GroupBy(m => m.LineKey)
+            .ToList();
+        if (rows.Count == 0) return [];
+
+        PdvtBoqItem Get(string id, Func<PdvtBoqItem> create)
+        {
+            if (cache == null) return create();
+            if (!cache.TryGetValue(id, out var existing)) cache[id] = existing = create();
+            return existing;
+        }
+
+        var result = new List<PdvtBoqItem>
+        {
+            Get("ps", () => new PdvtBoqItem { Id = "ps", SttBoq = ExtraSectionCode, IsHeading = true, HeadingLevel = 1, IsExtra = true, NoiDung = "PHÁT SINH NGOÀI BOQ" })
+        };
+        var index = 0;
+        foreach (var group in rows)
+        {
+            var latest = group.Last();
+            var item = Get("ps:" + group.Key, () => new PdvtBoqItem { Id = "ps:" + group.Key, IsExtra = true, ExtraKey = group.Key });
+            item.SttBoq = $"{ExtraSectionCode}.{++index}";
+            item.SectionCode = ExtraSectionCode;
+            item.NoiDung = latest.NoiDung;
+            item.ThongSoKyThuat = latest.ThongSoKyThuat;
+            item.DonViTinh = latest.DonViTinh;
+            item.KhoiLuong = latest.KhoiLuong;
+            result.Add(item);
+        }
+        return result;
+    }
+
+    /// <summary>Points every round of a "phát sinh" material at a BoQ line (e.g. after it became a contract appendix).</summary>
+    public static int LinkExtra(IEnumerable<PdvtRecord> records, string extraKey, string boqItemId)
+    {
+        var changed = 0;
+        foreach (var row in records.SelectMany(r => r.Materials).Where(m => m.IsExtra && m.LineKey == extraKey))
+        {
+            row.ExtraKey = extraKey;
+            row.BoqItemId = boqItemId;
+            changed++;
+        }
+        return changed;
+    }
+
+    public static int UnlinkExtras(IEnumerable<PdvtRecord> records, string boqItemId)
+    {
+        var changed = 0;
+        foreach (var row in records.SelectMany(r => r.Materials).Where(m => m.IsExtra && m.BoqItemId == boqItemId))
+        {
+            row.BoqItemId = string.Empty;
+            changed++;
+        }
+        return changed;
+    }
+
+    /// <summary>
+    /// Appends an appendix BoQ under a new top heading "PLn" and prefixes its section codes, so its
+    /// "I", "1.1"… cannot collide with the main BoQ. Returns the appended material lines.
+    /// </summary>
+    public static List<PdvtBoqItem> AppendAppendix(IList<PdvtBoqItem> boq, IEnumerable<PdvtBoqItem> imported, string label)
+    {
+        var number = boq.Where(x => x.IsTopHeading && AppendixCode.IsMatch(x.SttBoq)).Count() + 1;
+        var code = $"PL{number}";
+        while (boq.Any(x => x.IsHeading && string.Equals(x.SttBoq, code, StringComparison.OrdinalIgnoreCase))) code = $"PL{++number}";
+
+        boq.Add(new PdvtBoqItem { SttBoq = code, IsHeading = true, HeadingLevel = 1, NoiDung = $"PHỤ LỤC {number} · {label}" });
+        var added = new List<PdvtBoqItem>();
+        foreach (var item in imported)
+        {
+            if (item.IsHeading)
+            {
+                item.SttBoq = $"{code}.{item.SttBoq}";
+                item.HeadingLevel += 1;
+            }
+            else
+            {
+                item.SectionCode = string.IsNullOrEmpty(item.SectionCode) ? code : $"{code}.{item.SectionCode}";
+                added.Add(item);
+            }
+            boq.Add(item);
+        }
+        return added;
+    }
+
+    /// <summary>Links each unlinked "phát sinh" material to the single candidate line with the same name. Returns links made.</summary>
+    public static int AutoLinkExtras(IReadOnlyList<PdvtRecord> records, IEnumerable<PdvtBoqItem> extras, IReadOnlyList<PdvtBoqItem> candidates)
+    {
+        var linked = 0;
+        var taken = new HashSet<string>();
+        foreach (var extra in extras.Where(x => x.IsExtra && !x.IsHeading).ToList())
+        {
+            var matches = candidates.Where(c => !c.IsHeading && !taken.Contains(c.Id) && Normalize(c.NoiDung) == Normalize(extra.NoiDung)).ToList();
+            if (matches.Count != 1) continue;
+            LinkExtra(records, extra.ExtraKey, matches[0].Id);
+            taken.Add(matches[0].Id);
+            linked++;
+        }
+        return linked;
+    }
 
     public static bool IsInSection(PdvtBoqItem item, PdvtBoqItem heading)
     {
@@ -117,9 +238,11 @@ public static class PdvtProgress
             item.History = hits.AsEnumerable().Reverse().Select(h => new PdvtHistoryEntry(
                 h.Record.Id,
                 $"{h.Record.Number} · Lần {h.Record.Version}",
-                h.Record.IsSubmitted ? $"Trình {h.Record.SubmittedDate:dd/MM/yyyy}" : $"Nháp {h.Record.Date:dd/MM/yyyy}",
+                (h.Record.IsSubmitted ? $"Trình {h.Record.SubmittedDate:dd/MM/yyyy}" : $"Nháp {h.Record.Date:dd/MM/yyyy}") +
+                    (h.Row.IsExtra && !item.IsExtra ? " · trình dạng phát sinh" : string.Empty),
                 BrandWithOrigin(h.Row.NhanHieuPheDuyet, h.Row.XuatXuDeTrinh),
                 h.Row.Status, h.Record.IsSubmitted, h.Row.ReviewNote)).ToList();
+            item.HasLinkedExtra = !item.IsExtra && hits.Any(h => h.Row.IsExtra);
 
             var approved = hits.LastOrDefault(h => h.Record.IsSubmitted && h.Row.Status == PdvtApprovalStatus.DaDuyet);
             item.ApprovedPdvtNumbers = string.Join(", ", hits
@@ -183,6 +306,7 @@ public static class PdvtProgress
         item.ApprovedPdvtNumbers = string.Empty;
         item.ApprovalSummary = item.StatusLabel;
         if (item.IsHeading) item.PdvtNumbers = string.Empty;
+        item.HasLinkedExtra = false;
         item.History = [];
     }
 
