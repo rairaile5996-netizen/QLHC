@@ -109,21 +109,128 @@ public sealed class PdvtService
             foreach (var replacement in replacements) value = value.Replace(replacement.Key, replacement.Value, StringComparison.Ordinal);
             cell.Value = value;
         }
-        var materialCount = record.Materials.Count;
+        var templateRow = FindMaterialRow(sheet);
+        if (templateRow == 0) WriteFixedLayout(sheet, record.Materials);
+        else WriteTemplateRows(sheet, templateRow, record.Materials);
+        book.SaveAs(filePath);
+        return filePath;
+    }
+
+    /// <summary>
+    /// Per-material placeholders for the template row. Put them in any cell of one row; that row is repeated once
+    /// per material. "…HD" = theo hợp đồng, without suffix = đệ trình.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, Func<PdvtMaterialRow, int, object>> RowPlaceholders =
+        new Dictionary<string, Func<PdvtMaterialRow, int, object>>(StringComparer.Ordinal)
+        {
+            ["{STT}"] = (_, index) => index + 1,
+            ["{NoiDungHD}"] = (m, _) => m.NoiDungTheoHd,
+            ["{ModelThongSoHD}"] = (m, _) => JoinLines(m.ModelTheoHd, m.ThongSoTheoHd),
+            ["{ModelHD}"] = (m, _) => m.ModelTheoHd,
+            ["{ThongSoHD}"] = (m, _) => m.ThongSoTheoHd,
+            ["{NhanHieuHD}"] = (m, _) => m.NhanHieuTheoHd,
+            ["{XuatXuHD}"] = (m, _) => m.XuatXuTheoHd,
+            ["{NoiDung}"] = (m, _) => m.NoiDung,
+            ["{ModelThongSo}"] = (m, _) => JoinLines(m.Model, m.ThongSoKyThuat),
+            ["{Model}"] = (m, _) => m.Model,
+            ["{ThongSo}"] = (m, _) => m.ThongSoKyThuat,
+            ["{NhanHieu}"] = (m, _) => m.NhanHieuPheDuyet,
+            ["{XuatXu}"] = (m, _) => m.XuatXuDeTrinh,
+            ["{DVT}"] = (m, _) => m.DonViTinh,
+            ["{KhoiLuong}"] = (m, _) => m.KhoiLuong,
+            ["{DonGia}"] = (m, _) => m.DonGia,
+            ["{ThanhTien}"] = (m, _) => m.DonGia * m.KhoiLuong,
+            ["{GhiChu}"] = (m, _) => m.Note,
+            ["{KetQua}"] = (m, _) => m.Status == PdvtApprovalStatus.ChuaTrinh ? string.Empty : m.StatusLabel,
+            ["{YKienTVGS}"] = (m, _) => m.ReviewNote
+        };
+
+    private static string JoinLines(string first, string second) =>
+        string.Join("\n", new[] { first, second }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+    /// <summary>First row that contains a per-material placeholder, or 0.</summary>
+    public static int FindMaterialRow(IXLWorksheet sheet) =>
+        sheet.CellsUsed(c => !c.HasFormula && RowPlaceholders.Keys.Any(key => c.GetString().Contains(key, StringComparison.Ordinal)))
+            .Select(c => c.Address.RowNumber).DefaultIfEmpty(0).Min();
+
+    private static void WriteTemplateRows(IXLWorksheet sheet, int templateRow, IReadOnlyList<PdvtMaterialRow> materials)
+    {
+        if (materials.Count == 0) { sheet.Row(templateRow).Delete(); return; }
+        // Columns of the template row, captured before rows are inserted.
+        var lastColumn = Math.Max(sheet.Row(templateRow).LastCellUsed()?.Address.ColumnNumber ?? 1,
+                                  sheet.LastColumnUsed()?.ColumnNumber() ?? 1);
+        var templates = Enumerable.Range(1, lastColumn)
+            .Select(column => (Column: column, Text: sheet.Cell(templateRow, column).HasFormula ? string.Empty : sheet.Cell(templateRow, column).GetString()))
+            .Where(x => x.Text.Contains('{'))
+            .ToList();
+        if (materials.Count > 1) sheet.Row(templateRow).InsertRowsBelow(materials.Count - 1);
+
+        for (var index = 0; index < materials.Count; index++)
+        {
+            var rowNumber = templateRow + index;
+            if (index > 0) sheet.Row(templateRow).CopyTo(sheet.Row(rowNumber));
+            var material = materials[index];
+            foreach (var (column, text) in templates)
+            {
+                var cell = sheet.Cell(rowNumber, column);
+                var whole = text.Trim();
+                // A cell holding just one numeric placeholder keeps a real number so Excel formulas can use it.
+                if (RowPlaceholders.TryGetValue(whole, out var single) && single(material, index) is var value and (int or decimal))
+                {
+                    cell.Value = value is int i ? i : (decimal)value;
+                    continue;
+                }
+                var result = text;
+                foreach (var (key, getter) in RowPlaceholders)
+                    if (result.Contains(key, StringComparison.Ordinal))
+                        result = result.Replace(key, FormatValue(getter(material, index)), StringComparison.Ordinal);
+                cell.Value = result;
+            }
+            sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber, lastColumn, sheet.Row(templateRow).Height);
+        }
+        ExpandTemplateRanges(sheet, templateRow, templateRow + materials.Count - 1);
+    }
+
+    /// <summary>
+    /// Totals below the list usually reference just the template row (SUM(D15:D15)); Excel only grows a range when
+    /// rows are inserted inside it, so stretch such ranges over every material row.
+    /// </summary>
+    private static void ExpandTemplateRanges(IXLWorksheet sheet, int templateRow, int lastRow)
+    {
+        if (lastRow <= templateRow) return;
+        var pattern = new System.Text.RegularExpressions.Regex($@"(\$?[A-Z]{{1,3}}\$?){templateRow}:(\$?[A-Z]{{1,3}}\$?){templateRow}(?!\d)");
+        foreach (var cell in sheet.CellsUsed(c => c.HasFormula && c.Address.RowNumber > lastRow))
+        {
+            var formula = cell.FormulaA1;
+            var expanded = pattern.Replace(formula, m => $"{m.Groups[1].Value}{templateRow}:{m.Groups[2].Value}{lastRow}");
+            if (expanded != formula) cell.FormulaA1 = expanded;
+        }
+    }
+
+    private static string FormatValue(object value) => value switch
+    {
+        decimal d => d.ToString(d == Math.Truncate(d) ? "#,##0" : "#,##0.##", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")),
+        _ => value.ToString() ?? string.Empty
+    };
+
+    /// <summary>Layout of templates without row placeholders: row 15, columns A–J.</summary>
+    private static void WriteFixedLayout(IXLWorksheet sheet, IReadOnlyList<PdvtMaterialRow> materials)
+    {
+        var materialCount = materials.Count;
         if (materialCount == 0) sheet.Row(15).Delete();
         else if (materialCount > 1) sheet.Row(16).InsertRowsAbove(materialCount - 1);
         for (var index = 0; index < materialCount; index++)
         {
             var rowNumber = 15 + index;
             if (index > 0) sheet.Row(15).CopyTo(sheet.Row(rowNumber));
-            var material = record.Materials[index];
+            var material = materials[index];
             sheet.Cell(rowNumber, 1).Value = index + 1;
             sheet.Cell(rowNumber, 2).Value = material.NoiDungTheoHd;
-            sheet.Cell(rowNumber, 3).Value = string.IsNullOrWhiteSpace(material.ModelTheoHd) ? material.ThongSoTheoHd : material.ModelTheoHd + "\n" + material.ThongSoTheoHd;
+            sheet.Cell(rowNumber, 3).Value = JoinLines(material.ModelTheoHd, material.ThongSoTheoHd);
             sheet.Cell(rowNumber, 4).Value = material.NhanHieuTheoHd;
             sheet.Cell(rowNumber, 5).Value = material.XuatXuTheoHd;
             sheet.Cell(rowNumber, 6).Value = material.NoiDung;
-            sheet.Cell(rowNumber, 7).Value = string.IsNullOrWhiteSpace(material.Model) ? material.ThongSoKyThuat : material.Model + "\n" + material.ThongSoKyThuat;
+            sheet.Cell(rowNumber, 7).Value = JoinLines(material.Model, material.ThongSoKyThuat);
             sheet.Cell(rowNumber, 8).Value = material.NhanHieuPheDuyet;
             sheet.Cell(rowNumber, 9).Value = material.XuatXuDeTrinh;
             sheet.Cell(rowNumber, 10).Value = material.Note;
@@ -133,10 +240,8 @@ public sealed class PdvtService
                 sheet.Cell(rowNumber, col).Style.Alignment.WrapText = true;
                 sheet.Cell(rowNumber, col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             }
-            sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber);
+            sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber, 10, 26);
         }
-        book.SaveAs(filePath);
-        return filePath;
     }
 
     /// <summary>Writes the BoQ approval summary (one row per BoQ line, headings kept) next to the PDVT sheets.</summary>
@@ -196,15 +301,17 @@ public sealed class PdvtService
         return filePath;
     }
 
-    private static double CalculateAutoRowHeight(IXLWorksheet sheet, int rowNumber)
+    private static double CalculateAutoRowHeight(IXLWorksheet sheet, int rowNumber, int lastColumn, double minHeight)
     {
         var maxLines = 1;
-        for (var col = 2; col <= 10; col++)
+        for (var col = 1; col <= lastColumn; col++)
         {
             var text = sheet.Cell(rowNumber, col).GetString();
             if (string.IsNullOrWhiteSpace(text)) continue;
-
-            var colWidth = sheet.Column(col).Width;
+            // Merged cells span several columns; measure against the whole width.
+            var merged = sheet.Cell(rowNumber, col).MergedRange();
+            var colWidth = merged == null ? sheet.Column(col).Width
+                : Enumerable.Range(merged.FirstColumn().ColumnNumber(), merged.ColumnCount()).Sum(c => sheet.Column(c).Width);
             var charsPerLine = Math.Max(12, (int)Math.Floor((colWidth - 2) * 1.05));
             var explicitLines = text.Replace("\r\n", "\n").Split('\n');
             var totalLinesForCell = 0;
@@ -215,7 +322,7 @@ public sealed class PdvtService
             }
             if (totalLinesForCell > maxLines) maxLines = totalLinesForCell;
         }
-        return Math.Max(26, maxLines * 16.5 + 10);
+        return Math.Max(Math.Max(26, minHeight > 0 ? Math.Min(minHeight, 60) : 26), maxLines * 16.5 + 10);
     }
     public static List<string> ParseOptions(string value)
     {
