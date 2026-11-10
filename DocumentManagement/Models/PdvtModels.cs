@@ -26,6 +26,8 @@ public partial class PdvtBoqItem : ObservableObject
     public bool IsHeading { get; set; }
     public int HeadingLevel { get; set; }
     public string SectionCode { get; set; } = string.Empty;
+    /// <summary>Full heading path ("C>I>I.1") so repeated codes under different parents stay apart. Empty for BoQs imported before paths existed.</summary>
+    public string Path { get; set; } = string.Empty;
     public string NoiDung { get; set; } = string.Empty;
     public string ThongSoKyThuat { get; set; } = string.Empty;
     public string NhanHieuXuatXu { get; set; } = string.Empty;
@@ -70,7 +72,8 @@ public partial class PdvtBoqItem : ObservableObject
     [JsonIgnore] public string LinkLabel => string.IsNullOrWhiteSpace(SttBoq) ? NoiDung : $"{SttBoq} · {NoiDung}";
 
     [JsonIgnore] public string BrandOriginDisplay => string.Join(" · ", new[] { NhanHieuTheoHd, XuatXuTheoHd }.Where(x => !string.IsNullOrWhiteSpace(x)));
-    [JsonIgnore] public string SpecLine => string.Join(" · ", new[] { ThongSoKyThuat, BrandOriginDisplay }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    [JsonIgnore] public string SpecWithModel => string.Join(" · ", new[] { Model, ThongSoKyThuat }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    [JsonIgnore] public string SpecLine => string.Join(" · ", new[] { SpecWithModel, BrandOriginDisplay }.Where(x => !string.IsNullOrWhiteSpace(x)));
     [JsonIgnore] public bool IsTopHeading => IsHeading && HeadingLevel <= 1;
 }
 
@@ -92,10 +95,10 @@ public partial class PdvtMaterialRow : ObservableObject
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsBrandDiff), nameof(IsDiff))] private string _nhanHieuPheDuyet = string.Empty;
     [ObservableProperty] private string _noiDungTheoHd = string.Empty;
     [ObservableProperty] private string _thongSoTheoHd = string.Empty;
-    [ObservableProperty] private string _modelTheoHd = string.Empty;
+    [ObservableProperty][NotifyPropertyChangedFor(nameof(HasModel))] private string _modelTheoHd = string.Empty;
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsOriginDiff), nameof(IsDiff))] private string _xuatXuTheoHd = string.Empty;
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsOriginDiff), nameof(IsDiff))] private string _xuatXuDeTrinh = string.Empty;
-    [ObservableProperty] private string _model = string.Empty;
+    [ObservableProperty][NotifyPropertyChangedFor(nameof(HasModel))] private string _model = string.Empty;
     [ObservableProperty] private string _donViTinh = string.Empty;
     [ObservableProperty] private decimal _donGia;
     [ObservableProperty] private decimal _khoiLuong;
@@ -109,6 +112,7 @@ public partial class PdvtMaterialRow : ObservableObject
     public List<string> NhanHieuOptions { get; set; } = [];
 
     [JsonIgnore] public bool IsExtra => Source != "BoQ";
+    [JsonIgnore] public bool HasModel => !string.IsNullOrWhiteSpace(Model) || !string.IsNullOrWhiteSpace(ModelTheoHd);
     [JsonIgnore] public string SourceLabel => IsExtra ? "Phát sinh" : "Theo BoQ";
     [JsonIgnore] public string StatusLabel => PdvtProgress.StatusLabel(Status, Status != PdvtApprovalStatus.ChuaTrinh);
     [JsonIgnore] public bool HasResult => PdvtProgress.HasResult(Status);

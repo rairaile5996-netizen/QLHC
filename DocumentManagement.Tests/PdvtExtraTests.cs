@@ -80,7 +80,8 @@ public sealed class PdvtExtraTests
         Assert.Equal(2, added.Count);
         Assert.Equal("PL1", boq[2].SttBoq);
         Assert.Equal("PL1.I", boq[3].SttBoq);
-        Assert.Equal("PL1.I", added[0].SectionCode);
+        Assert.Equal("PL1>I", added[0].SectionCode);
+        Assert.Equal("PL1>I", boq[3].Path);
         Assert.True(PdvtProgress.IsAppendixItem(added[0]));
         Assert.False(PdvtProgress.IsInSection(added[0], boq[0])); // appendix "I" must not merge into contract "I"
 

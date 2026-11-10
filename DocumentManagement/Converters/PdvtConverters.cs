@@ -42,6 +42,15 @@ public sealed class CountToStarConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
+/// <summary>Heading level → left indent for the BoQ preview tree.</summary>
+public sealed class LevelToIndentConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        new Thickness(value is int level && level > 1 ? (level - 1) * 16 : 0, 0, 0, 0);
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
 /// <summary>
 /// Lets elements outside the visual tree (DataGrid columns) bind to the view model:
 /// declare it as a resource with Data="{Binding}" and bind via Source={StaticResource ...}.

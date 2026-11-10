@@ -662,7 +662,7 @@ public partial class PdvtViewModel : ObservableObject
                 continue;
             }
             if (DraftMaterials.Any(x => x.BoqItemId == item.Id)) continue;
-            var thongSo = !string.IsNullOrWhiteSpace(item.ThongSoKyThuat) ? item.ThongSoKyThuat : item.Model;
+            var thongSo = item.ThongSoKyThuat;
             var brandHd = string.IsNullOrWhiteSpace(item.NhanHieuTheoHd) ? item.NhanHieuXuatXu : item.NhanHieuTheoHd;
             var brandSubmitted = !string.IsNullOrWhiteSpace(brandHd) ? item.NhanHieuOptions.FirstOrDefault() ?? brandHd : string.Empty;
             DraftMaterials.Add(new PdvtMaterialRow
@@ -800,7 +800,7 @@ public partial class PdvtViewModel : ObservableObject
         if (PickBoqFile() is not { } path) return;
         try
         {
-            var imported = PdvtService.ReadBoq(path);
+            if (ReadBoqInteractive(path, "Nạp BoQ hợp đồng") is not { } imported) return;
             if (!imported.Any(item => !item.IsHeading)) { ShowToast("File BoQ không có dòng vật tư nào.", isError: true); return; }
             var appendix = BoqItems.Where(PdvtProgress.IsAppendixItem).ToList();
             var mainItems = BoqItems.Except(appendix).ToList();
@@ -849,7 +849,7 @@ public partial class PdvtViewModel : ObservableObject
         if (PickBoqFile() is not { } path) return;
         try
         {
-            var imported = PdvtService.ReadBoq(path);
+            if (ReadBoqInteractive(path, "Nạp phụ lục hợp đồng") is not { } imported) return;
             if (!imported.Any(item => !item.IsHeading)) { ShowToast("File phụ lục không có dòng vật tư nào.", isError: true); return; }
             AddAppendix(imported, System.IO.Path.GetFileNameWithoutExtension(path));
         }
@@ -884,6 +884,29 @@ public partial class PdvtViewModel : ObservableObject
         ShowToast($"Đã thêm phụ lục {code} với {added.Count} vật tư" +
                   (linked > 0 ? $"; tự gắn {linked} vật tư phát sinh trùng tên." : ".") +
                   (ExtraCount > 0 ? " Phát sinh còn lại có thể gắn tay ở màn Tổng hợp." : string.Empty));
+    }
+
+    /// <summary>Shows the column-mapping dialog; returns false when cancelled. Tests replace it.</summary>
+    public Func<BoqImportViewModel, bool> ShowImportDialog { get; set; } = vm =>
+    {
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow;
+        var window = new Views.BoqImportWindow { DataContext = vm };
+        if (owner is { IsVisible: true }) window.Owner = owner;
+        return window.ShowDialog() == true;
+    };
+
+    /// <summary>Detects columns, applies the layout remembered for this header template, and lets the user confirm.</summary>
+    private List<PdvtBoqItem>? ReadBoqInteractive(string path, string title)
+    {
+        using var workbook = BoqWorkbook.Open(path);
+        var map = workbook.Detect();
+        var saved = _service.FindLayout(workbook.Signature(map.SheetName, map.HeaderRow));
+        if (saved != null) map.Apply(saved);
+        var dialog = new BoqImportViewModel(workbook, map, title, usedSavedLayout: saved != null);
+        if (!ShowImportDialog(dialog)) return null;
+        var confirmed = dialog.Map;
+        _service.SaveLayout(workbook.Signature(confirmed.SheetName, confirmed.HeaderRow), confirmed);
+        return workbook.Read(confirmed);
     }
 
     private static string? PickBoqFile()

@@ -134,7 +134,7 @@ public sealed class PdvtServiceTests
             var items = PdvtService.ReadBoq(path);
             Assert.Equal(["Hệ thống điện", "Dây cáp điện", "Cáp điện", "Ống điện", "Ống SP"], items.Select(item => item.NoiDung));
             Assert.Equal([true, true, false, true, false], items.Select(item => item.IsHeading));
-            Assert.Equal("I.1", items[2].SectionCode);
+            Assert.Equal("I>I.1", items[2].SectionCode); // full heading path
             Assert.Equal("II", items[4].SectionCode);
         }
         finally { if (File.Exists(path)) File.Delete(path); }

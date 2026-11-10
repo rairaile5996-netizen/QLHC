@@ -9,20 +9,32 @@ namespace DocumentManagement.Services;
 
 public sealed class PdvtService
 {
-    private static readonly string[][] BoqHeaderAliases =
-    [
-        ["Nội dung công việc", "Nội dung", "Tên công việc", "Tên vật tư", "Tên vật liệu", "Tên hàng hóa", "Tên hàng hóa thiết bị", "Tên vật tư thiết bị", "Tên thiết bị vật tư", "Vật tư thiết bị", "Tên thiết bị", "Tên sản phẩm", "Diễn giải", "Mô tả", "Hạng mục công việc", "Danh mục vật tư", "Tên vật tư / quy cách"],
-        ["Thông số kỹ thuật", "Thông số", "Yêu cầu kỹ thuật", "Đặc tính kỹ thuật", "Quy cách", "Quy cách kỹ thuật", "Thông số kỹ thuật / quy cách", "Quy cách - thông số", "Quy cách / Thông số kỹ thuật", "Tiêu chuẩn kỹ thuật", "Thông số KT", "TSKT", "Mô tả kỹ thuật", "Kích thước", "Yêu cầu vật tư", "Quy cách vật tư", "Chủng loại / quy cách", "Mô tả quy cách"],
-        ["Nhãn hiệu - xuất xứ", "Nhãn hiệu/xuất xứ", "Nhãn hiệu xuất xứ", "Thương hiệu / xuất xứ", "Hãng / xuất xứ", "Nhãn hiệu", "Thương hiệu", "Hãng sản xuất", "Nhà sản xuất", "Hãng", "Hãng SX", "Nhà SX"],
-        ["Model", "Mã hiệu", "Mã sản phẩm", "Mã vật tư", "Chủng loại", "Ký hiệu"],
-        ["Đơn vị tính", "ĐVT", "Đơn vị", "Đơn vị đo"],
-        ["Đơn giá", "Giá", "Đơn giá vật tư", "Đơn giá hợp đồng"],
-        ["Khối lượng", "Số lượng", "KL", "SL", "Khối lượng theo HĐ", "Số lượng theo HĐ"],
-        ["Xuất xứ", "Nước sản xuất", "Nguồn gốc", "Nước xuất xứ", "Quốc gia xuất xứ"]
-    ];
-
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     private static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DocumentManagement", "PDVT");
+    private static string LayoutsPath => Path.Combine(Folder, "boq-layouts.json");
+
+    /// <summary>Column choices the user confirmed for a header layout (keyed by <see cref="BoqWorkbook.Signature"/>).</summary>
+    public BoqLayout? FindLayout(string signature)
+    {
+        if (string.IsNullOrEmpty(signature)) return null;
+        return LoadLayouts().TryGetValue(signature, out var layout) ? layout : null;
+    }
+
+    public void SaveLayout(string signature, BoqColumnMap map)
+    {
+        if (string.IsNullOrEmpty(signature)) return;
+        var layouts = LoadLayouts();
+        layouts[signature] = map.ToLayout();
+        Directory.CreateDirectory(Folder);
+        File.WriteAllText(LayoutsPath, JsonSerializer.Serialize(layouts, JsonOptions));
+    }
+
+    private static Dictionary<string, BoqLayout> LoadLayouts()
+    {
+        if (!File.Exists(LayoutsPath)) return [];
+        try { return JsonSerializer.Deserialize<Dictionary<string, BoqLayout>>(File.ReadAllText(LayoutsPath), JsonOptions) ?? []; }
+        catch (JsonException) { return []; } // a corrupt file is rewritten on the next save
+    }
     private static string FilePath(int documentId) => Path.Combine(Folder, $"{documentId}.json");
     private static string BoqFilePath(int documentId) => Path.Combine(Folder, $"{documentId}.boq.json");
     public List<PdvtRecord> Load(int documentId) => File.Exists(FilePath(documentId)) ? JsonSerializer.Deserialize<List<PdvtRecord>>(File.ReadAllText(FilePath(documentId)), JsonOptions) ?? [] : [];
@@ -141,7 +153,7 @@ public sealed class PdvtService
         sheet.Cell(1, 1).Value = "BẢNG TỔNG HỢP PHÊ DUYỆT VẬT TƯ";
         sheet.Cell(2, 1).Value = $"Hợp đồng: {document.ContractNumber}";
         sheet.Range(1, 1, 1, 11).Merge().Style.Font.SetBold().Font.SetFontSize(14);
-        string[] headers = ["STT", "Nội dung vật tư", "Thông số kỹ thuật theo HĐ", "Nhãn hiệu / xuất xứ theo HĐ", "ĐVT", "Khối lượng",
+        string[] headers = ["STT", "Nội dung vật tư", "Model · thông số kỹ thuật theo HĐ", "Nhãn hiệu / xuất xứ theo HĐ", "ĐVT", "Khối lượng",
             "Trạng thái", "Nhãn hiệu được duyệt", "Xuất xứ được duyệt", "Phiếu PDVT", "Ngày duyệt"];
         const int headerRow = 4;
         for (var col = 0; col < headers.Length; col++) sheet.Cell(headerRow, col + 1).Value = headers[col];
@@ -160,7 +172,7 @@ public sealed class PdvtService
             }
             else
             {
-                sheet.Cell(row, 3).Value = item.ThongSoKyThuat;
+                sheet.Cell(row, 3).Value = item.SpecWithModel;
                 sheet.Cell(row, 4).Value = item.BrandOriginDisplay;
                 sheet.Cell(row, 5).Value = item.DonViTinh;
                 sheet.Cell(row, 6).Value = item.KhoiLuong;
@@ -229,82 +241,17 @@ public sealed class PdvtService
         }
         return (brand, origin, parts);
     }
+    /// <summary>Reads a BoQ with automatically detected columns (no dialog).</summary>
     public static List<PdvtBoqItem> ReadBoq(string path)
     {
-        var readablePath = MakeExternalFormulaValuesReadable(path);
-        try
-        {
-            using var book = new XLWorkbook(readablePath);
-            var candidate = book.Worksheets
-                .SelectMany(sheet => FindHeaderRows(sheet))
-                .OrderByDescending(header => header.Score)
-                .FirstOrDefault();
-            if (candidate.Sheet is null)
-            {
-                var sheetNames = string.Join(", ", book.Worksheets.Select(sheet => sheet.Name));
-                throw new InvalidDataException($"Không tìm thấy dòng tiêu đề có cột tên/nội dung vật tư trong các sheet: {sheetNames}. Hãy kiểm tra sheet và tên cột BoQ.");
-            }
-
-            var rows = new List<PdvtBoqItem>();
-            var contentColumn = candidate.Columns[0].SelectMany(group => group).First();
-            var numberColumn = contentColumn > 1 ? contentColumn - 1 : 0;
-            var currentSection = string.Empty;
-            var lastRow = candidate.Sheet.RangeUsed()!.RangeAddress.LastAddress.RowNumber;
-            for (var rowNumber = candidate.RowNumber + 1; rowNumber <= lastRow; rowNumber++)
-            {
-                string Get(int fieldIndex) => candidate.Columns[fieldIndex]
-                    .SelectMany(column => column)
-                    .Select(column => candidate.Sheet.Cell(rowNumber, column).GetString().Trim())
-                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
-
-                var brand = Get(2);
-                var origin = Get(7);
-                var split = SplitBrandOrigin(brand, origin);
-                var brandOptions = split.Options;
-                var approvedOptions = string.IsNullOrWhiteSpace(split.Origin)
-                    ? brandOptions
-                    : brandOptions.Count == 0
-                        ? [split.Origin]
-                        : brandOptions.Select(option => option.Contains(split.Origin, StringComparison.CurrentCultureIgnoreCase)
-                            ? option : $"{option} / {split.Origin}").ToList();
-                var item = new PdvtBoqItem
-                {
-                    SttBoq = numberColumn == 0 ? string.Empty : candidate.Sheet.Cell(rowNumber, numberColumn).GetString().Trim(),
-                    NoiDung = Get(0),
-                    ThongSoKyThuat = Get(1),
-                    NhanHieuXuatXu = string.Join("; ", approvedOptions),
-                    NhanHieuTheoHd = brand,
-                    XuatXuTheoHd = split.Origin,
-                    Model = Get(3),
-                    DonViTinh = Get(4),
-                    DonGia = DecimalParse(Get(5)),
-                    KhoiLuong = DecimalParse(Get(6))
-                };
-                if (string.IsNullOrWhiteSpace(item.NoiDung)) continue;
-                if (item.KhoiLuong == 0 && item.DonGia == 0 &&
-                    (string.IsNullOrWhiteSpace(item.DonViTinh) || item.DonViTinh == "0"))
-                {
-                    if (string.IsNullOrWhiteSpace(item.SttBoq) ||
-                        item.NoiDung.StartsWith("Tổng", StringComparison.CurrentCultureIgnoreCase)) continue;
-                    item.IsHeading = true;
-                    item.HeadingLevel = item.SttBoq.Count(c => c == '.') + 1;
-                    currentSection = item.SttBoq;
-                }
-                else item.SectionCode = currentSection;
-                item.NhanHieuOptions = brandOptions;
-                rows.Add(item);
-            }
-
-            return rows;
-        }
-        finally
-        {
-            if (!string.Equals(readablePath, path, StringComparison.OrdinalIgnoreCase))
-                File.Delete(readablePath);
-        }
+        using var workbook = BoqWorkbook.Open(path);
+        var map = workbook.Detect();
+        if (map.Get(BoqField.NoiDung) == 0)
+            throw new InvalidDataException($"Không tìm thấy dòng tiêu đề có cột tên/nội dung vật tư trong các sheet: {string.Join(", ", workbook.SheetNames)}. Hãy kiểm tra sheet và tên cột BoQ.");
+        return workbook.Read(map);
     }
 
-    private static string MakeExternalFormulaValuesReadable(string sourcePath)
+    internal static string MakeExternalFormulaValuesReadable(string sourcePath)
     {
         var tempPath = Path.Combine(Path.GetTempPath(), $"pdvt-boq-{Guid.NewGuid():N}{Path.GetExtension(sourcePath)}");
         File.Copy(sourcePath, tempPath);
@@ -348,38 +295,4 @@ public sealed class PdvtService
             throw;
         }
     }
-
-    private static IEnumerable<(IXLWorksheet Sheet, int RowNumber, int Score, List<List<List<int>>> Columns)> FindHeaderRows(IXLWorksheet sheet)
-    {
-        var used = sheet.RangeUsed();
-        if (used == null) yield break;
-
-        var firstRow = used.RangeAddress.FirstAddress.RowNumber;
-        var lastRow = Math.Min(used.RangeAddress.LastAddress.RowNumber, firstRow + 59);
-        for (var rowNumber = firstRow; rowNumber <= lastRow; rowNumber++)
-        {
-            var headers = sheet.Row(rowNumber).CellsUsed()
-                .Select(cell => (Name: Normalize(cell.GetString()), Column: cell.Address.ColumnNumber))
-                .Where(header => !string.IsNullOrWhiteSpace(header.Name))
-                .GroupBy(header => header.Name)
-                .ToDictionary(group => group.Key, group => group.Select(header => header.Column).ToList());
-
-            var columns = BoqHeaderAliases
-                .Select(aliases => aliases.Select(Normalize).Where(headers.ContainsKey).Select(key => headers[key]).ToList())
-                .ToList();
-            if (columns[0].Count == 0) continue;
-
-            var mappedFields = columns.Count(field => field.Count > 0);
-            yield return (sheet, rowNumber, mappedFields, columns);
-        }
-    }
-    private static string Normalize(string s)
-    {
-        var withoutMarks = string.Concat(s.Normalize(System.Text.NormalizationForm.FormD)
-            .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark));
-        return string.Concat(withoutMarks.Replace("đ", "d", StringComparison.OrdinalIgnoreCase)
-            .ToLowerInvariant()
-            .Where(char.IsLetterOrDigit));
-    }
-    private static decimal DecimalParse(string s) => decimal.TryParse(s.Replace(",", ""), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : 0;
 }
