@@ -54,6 +54,7 @@ public partial class PdvtBoqItem : ObservableObject
     [JsonIgnore][ObservableProperty] private string _latestRecordId = string.Empty;
     [JsonIgnore][ObservableProperty] private string _approvedBrand = string.Empty;
     [JsonIgnore][ObservableProperty] private string _approvedOrigin = string.Empty;
+    [JsonIgnore][ObservableProperty] private string _approvedModel = string.Empty;
     [JsonIgnore][ObservableProperty] private DateTime? _approvedDate;
     [JsonIgnore][ObservableProperty] private bool _isInDraft;
     [JsonIgnore][ObservableProperty] private List<PdvtHistoryEntry> _history = [];
@@ -77,6 +78,12 @@ public partial class PdvtBoqItem : ObservableObject
     [JsonIgnore] public bool IsTopHeading => IsHeading && HeadingLevel <= 1;
 }
 
+/// <summary>A BoQ heading shown above the materials it contains.</summary>
+public sealed record PdvtSectionRef(string Code, string Name)
+{
+    [JsonIgnore] public string Label => string.IsNullOrWhiteSpace(Code) ? Name : $"{Code}. {Name}";
+}
+
 public partial class PdvtMaterialRow : ObservableObject
 {
     [JsonIgnore]
@@ -95,10 +102,10 @@ public partial class PdvtMaterialRow : ObservableObject
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsBrandDiff), nameof(IsDiff))] private string _nhanHieuPheDuyet = string.Empty;
     [ObservableProperty] private string _noiDungTheoHd = string.Empty;
     [ObservableProperty] private string _thongSoTheoHd = string.Empty;
-    [ObservableProperty][NotifyPropertyChangedFor(nameof(HasModel))] private string _modelTheoHd = string.Empty;
+    [ObservableProperty][NotifyPropertyChangedFor(nameof(HasModel), nameof(IsModelDiff), nameof(IsDiff))] private string _modelTheoHd = string.Empty;
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsOriginDiff), nameof(IsDiff))] private string _xuatXuTheoHd = string.Empty;
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsOriginDiff), nameof(IsDiff))] private string _xuatXuDeTrinh = string.Empty;
-    [ObservableProperty][NotifyPropertyChangedFor(nameof(HasModel))] private string _model = string.Empty;
+    [ObservableProperty][NotifyPropertyChangedFor(nameof(HasModel), nameof(IsModelDiff), nameof(IsDiff))] private string _model = string.Empty;
     [ObservableProperty] private string _donViTinh = string.Empty;
     [ObservableProperty] private decimal _donGia;
     [ObservableProperty] private decimal _khoiLuong;
@@ -110,7 +117,15 @@ public partial class PdvtMaterialRow : ObservableObject
     /// <summary>Supervisor (TVGS) feedback recorded with the result.</summary>
     [ObservableProperty] private string _reviewNote = string.Empty;
     public List<string> NhanHieuOptions { get; set; } = [];
+    /// <summary>STT of the line in the contract BoQ ("1", "2a"…); empty for "phát sinh".</summary>
+    public string SttBoq { get; set; } = string.Empty;
+    /// <summary>BoQ headings above the line, outermost first.</summary>
+    public List<PdvtSectionRef> Sections { get; set; } = [];
 
+    [JsonIgnore] public string SectionLabel => Sections.Count == 0
+        ? (IsExtra ? "Phát sinh ngoài BoQ" : "Vật tư theo BoQ")
+        : string.Join("  ›  ", Sections.Select(x => x.Label));
+    [JsonIgnore] public string DisplayStt => string.IsNullOrWhiteSpace(SttBoq) ? Stt.ToString() : SttBoq;
     [JsonIgnore] public bool IsExtra => Source != "BoQ";
     [JsonIgnore] public bool HasModel => !string.IsNullOrWhiteSpace(Model) || !string.IsNullOrWhiteSpace(ModelTheoHd);
     [JsonIgnore] public string SourceLabel => IsExtra ? "Phát sinh" : "Theo BoQ";
@@ -118,7 +133,10 @@ public partial class PdvtMaterialRow : ObservableObject
     [JsonIgnore] public bool HasResult => PdvtProgress.HasResult(Status);
     [JsonIgnore] public bool IsBrandDiff => !IsExtra && PdvtProgress.IsDifferent(NhanHieuTheoHd, NhanHieuPheDuyet, NhanHieuOptions);
     [JsonIgnore] public bool IsOriginDiff => !IsExtra && PdvtProgress.IsDifferent(XuatXuTheoHd, XuatXuDeTrinh, []);
-    [JsonIgnore] public bool IsDiff => IsBrandDiff || IsOriginDiff;
+    [JsonIgnore] public bool IsModelDiff => !IsExtra && PdvtProgress.IsDifferent(ModelTheoHd, Model, []);
+    [JsonIgnore] public bool IsDiff => IsBrandDiff || IsOriginDiff || IsModelDiff;
+
+    partial void OnSttChanged(int value) => OnPropertyChanged(nameof(DisplayStt));
 
     partial void OnThongSoTheoHdChanged(string value)
     {
@@ -183,10 +201,16 @@ public sealed class PdvtRecord
     [JsonIgnore] public string RoundLabel => Version > 1 ? $"Lần {Version}" : string.Empty;
     /// <summary>Number of the round that re-submitted this sheet's rejected rows; set by the view model.</summary>
     [JsonIgnore] public string NextRoundNumber { get; set; } = string.Empty;
-    [JsonIgnore] public string Subtitle => string.Join(" · ", new[]
+    /// <summary>Top-level BoQ sections of the sheet's materials, then the material count.</summary>
+    [JsonIgnore] public string Subtitle
     {
-        string.IsNullOrWhiteSpace(HạngMục) ? "Chưa có hạng mục" : HạngMục,
-        string.IsNullOrWhiteSpace(NhaCungCap) ? $"{Materials.Count} vật tư" : NhaCungCap
-    });
+        get
+        {
+            var sections = Materials.Select(m => m.Sections.FirstOrDefault()?.Name ?? (m.IsExtra ? "Phát sinh" : string.Empty))
+                .Where(x => x.Length > 0).Distinct().ToList();
+            var head = sections.Count switch { 0 => string.Empty, 1 => sections[0], _ => $"{sections[0]} +{sections.Count - 1} mục" };
+            return string.Join(" · ", new[] { head, $"{Materials.Count} vật tư" }.Where(x => x.Length > 0));
+        }
+    }
     [JsonIgnore] public string ProgressText => PdvtProgress.RecordProgressText(this);
 }

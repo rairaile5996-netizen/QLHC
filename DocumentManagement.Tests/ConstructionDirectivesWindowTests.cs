@@ -61,7 +61,7 @@ public sealed class ConstructionDirectivesWindowTests
                 var pdvtVm = new PdvtViewModel(provider.GetRequiredService<MainViewModel>())
                 {
                     // Discard unsaved sheets instead of opening a modal dialog.
-                    Ask = (_, _, _) => MessageBoxResult.No
+                    Ask = (_, _, _, _) => MessageBoxResult.No
                 };
                 var pdvtView = new PdvtView { DataContext = pdvtVm, Height = 600 };
                 pdvtVm.NewCommand.Execute(null);

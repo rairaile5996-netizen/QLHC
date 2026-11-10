@@ -3266,6 +3266,14 @@ namespace DocumentManagement.ViewModels
 
 
 
+    /// <summary>Ctrl+S. On the PDVT tab it saves the open sheet, same as that tab's "Lưu" button.</summary>
+    [RelayCommand]
+    private void SaveShortcut()
+    {
+        if (SelectedTabIndex == 7 && PdvtViewModel != null) PdvtViewModel.SaveCommand.Execute(null);
+        else SaveData();
+    }
+
     [RelayCommand]
 
     private void SaveData()

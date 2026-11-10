@@ -56,9 +56,17 @@ public partial class PdvtViewModel : ObservableObject
     private readonly Dictionary<string, PdvtBoqItem> _extraCache = [];
     private List<PdvtBoqItem> _extras = [];
 
-    /// <summary>Confirmation hook (message, title, buttons). Tests replace it to avoid modal dialogs.</summary>
-    public Func<string, string, MessageBoxButton, MessageBoxResult> Ask { get; set; } =
-        (message, title, buttons) => MessageBox.Show(message, title, buttons, MessageBoxImage.Question);
+    /// <summary>
+    /// Confirmation hook (message, title, buttons, button captions). Uses the CVXD module's dialog;
+    /// captions map to Yes/No/Cancel or OK/Cancel in order. Tests replace it to avoid modal dialogs.
+    /// </summary>
+    public Func<string, string, MessageBoxButton, string[], MessageBoxResult> Ask { get; set; } = (message, title, buttons, captions) =>
+    {
+        string? Caption(int i) => i < captions.Length ? captions[i] : null;
+        return buttons is MessageBoxButton.OK or MessageBoxButton.OKCancel
+            ? CvxdMessageBox.Show(title, message, buttons, MessageBoxImage.Question, okText: Caption(0), cancelText: Caption(1))
+            : CvxdMessageBox.Show(title, message, buttons, MessageBoxImage.Question, Caption(0), Caption(1), cancelText: Caption(2));
+    };
 
     public ObservableCollection<PdvtRecord> Records { get; } = [];
     public ObservableCollection<PdvtBoqItem> BoqItems { get; } = [];
@@ -111,6 +119,7 @@ public partial class PdvtViewModel : ObservableObject
     [ObservableProperty] private int _draftRejected;
     [ObservableProperty] private int _draftPending;
     [ObservableProperty] private int _diffCount;
+    [ObservableProperty] private bool _showModelColumn = true;
     [ObservableProperty] private int _checkedCount;
     [ObservableProperty] private bool _isComplete;
     [ObservableProperty] private bool _canResubmit;
@@ -180,6 +189,8 @@ public partial class PdvtViewModel : ObservableObject
         _projectInfoProvider = projectInfoProvider ?? (() => null);
         DraftMaterialsView = CollectionViewSource.GetDefaultView(DraftMaterials);
         DraftMaterialsView.Filter = FilterDraftRow;
+        // Rows are kept in BoQ order, so each section forms one contiguous group.
+        DraftMaterialsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(PdvtMaterialRow.SectionLabel)));
         BoqItems.CollectionChanged += OnBoqItemsChanged;
         DraftMaterials.CollectionChanged += OnDraftMaterialsChanged;
         Load();
@@ -376,7 +387,8 @@ public partial class PdvtViewModel : ObservableObject
     private bool ConfirmLeave()
     {
         if (!NeedsSaveConfirmation) return true;
-        var answer = Ask($"{DraftNumber} có thay đổi chưa lưu.\nLưu lại trước khi rời phiếu?", "Thay đổi chưa lưu", MessageBoxButton.YesNoCancel);
+        var answer = Ask($"{DraftNumber} có thay đổi chưa lưu.\nLưu lại trước khi rời phiếu?", "Thay đổi chưa lưu", MessageBoxButton.YesNoCancel,
+            ["LƯU LẠI", "KHÔNG LƯU", "HỦY"]);
         return answer switch
         {
             MessageBoxResult.Yes => SaveDraft(openExcel: false),
@@ -408,6 +420,12 @@ public partial class PdvtViewModel : ObservableObject
             if (string.IsNullOrWhiteSpace(cloned.ThongSoKyThuat)) cloned.ThongSoKyThuat = cloned.ThongSoTheoHd;
             if (string.IsNullOrWhiteSpace(cloned.XuatXuDeTrinh)) cloned.XuatXuDeTrinh = cloned.XuatXuTheoHd;
             if (record.IsSubmitted && cloned.Status == PdvtApprovalStatus.ChuaTrinh) cloned.Status = PdvtApprovalStatus.DaTrinh;
+            // Sheets saved before sections were stored pick them up from the current BoQ.
+            if (BoqItems.FirstOrDefault(x => x.Id == cloned.BoqItemId && !x.IsHeading) is { } source)
+            {
+                cloned.SttBoq = source.SttBoq;
+                cloned.Sections = SectionsOf(source);
+            }
             DraftMaterials.Add(cloned);
         }
         ShowOnlyDiff = false;
@@ -505,6 +523,8 @@ public partial class PdvtViewModel : ObservableObject
         DraftRejected = snapshot.RejectedCount;
         DraftPending = IsLocked ? snapshot.PendingCount : rows.Count;
         DiffCount = rows.Count(x => x.IsDiff);
+        // Drafts always offer the Model column for typing; submitted sheets only need it when a row has a model.
+        ShowModelColumn = !IsLocked || rows.Any(x => x.HasModel);
         DraftStatusLabel = snapshot.StatusLabel;
         DraftStatusKind = snapshot.StatusKind;
         IsComplete = IsLocked && rows.Count > 0 && DraftPending == 0;
@@ -513,7 +533,8 @@ public partial class PdvtViewModel : ObservableObject
         ResubmitLabel = next != null ? $"Mở {next.Number}" : $"Trình lại (lần {DraftVersion + 1})";
 
         var step = !IsLocked ? 1 : IsComplete ? 5 : 3;
-        string[] labels = ["Nháp", "Đã trình", "Ghi nhận kết quả", "Hoàn tất"];
+        // Step 3 reads "Chờ kết quả" until the first result is entered.
+        string[] labels = ["Nháp", "Đã trình", DraftPending == DraftTotal ? "Chờ kết quả" : "Ghi nhận kết quả", "Hoàn tất"];
         var steps = labels.Select((label, i) => new PdvtStep(i + 1, label,
             step > i + 1 ? "done" : step == i + 1 ? "cur" : "todo", i == labels.Length - 1,
             step == i + 1 || (step > labels.Length && i == labels.Length - 1))).ToList();
@@ -536,10 +557,22 @@ public partial class PdvtViewModel : ObservableObject
     public bool ShowBulkBar => IsLocked && CheckedCount > 0;
     public bool ShowBulkHint => IsLocked && CheckedCount == 0;
 
+    /// <summary>Numbers rows inside their section; rows with a BoQ STT show that instead.</summary>
     private void UpdateDraftOrder()
     {
-        for (var index = 0; index < DraftMaterials.Count; index++) DraftMaterials[index].Stt = index + 1;
+        var counters = new Dictionary<string, int>();
+        foreach (var row in DraftMaterials)
+        {
+            counters[row.SectionLabel] = counters.GetValueOrDefault(row.SectionLabel) + 1;
+            row.Stt = counters[row.SectionLabel];
+        }
     }
+
+    /// <summary>BoQ headings that contain the item, outermost first.</summary>
+    private List<PdvtSectionRef> SectionsOf(PdvtBoqItem item) =>
+        BoqItems.Where(h => h.IsHeading && PdvtProgress.IsInSection(item, h))
+            .Select(h => new PdvtSectionRef(h.SttBoq.Trim(), h.NoiDung.Trim()))
+            .ToList();
 
     private bool FilterDraftRow(object obj) =>
         obj is PdvtMaterialRow row &&
@@ -681,7 +714,9 @@ public partial class PdvtViewModel : ObservableObject
                 DonViTinh = item.DonViTinh,
                 NhanHieuOptions = item.NhanHieuOptions.ToList(),
                 DonGia = item.DonGia,
-                KhoiLuong = item.KhoiLuong
+                KhoiLuong = item.KhoiLuong,
+                SttBoq = item.SttBoq.Trim(),
+                Sections = SectionsOf(item)
             });
             added++;
         }
@@ -924,7 +959,7 @@ public partial class PdvtViewModel : ObservableObject
         if (_main.SelectedDocument == null || SelectedSummaryItem is not { IsExtra: true, IsHeading: false } extra) return;
         if (LinkTarget is not { } target) { ShowToast("Chọn dòng BoQ / phụ lục để gắn.", isError: true); return; }
         if (Ask($"Gắn \"{extra.NoiDung}\" vào dòng {target.LinkLabel}?\nLịch sử trình duyệt và kết quả sẽ chuyển sang dòng này.",
-                "Gắn vật tư phát sinh", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+                "Gắn vật tư phát sinh", MessageBoxButton.OKCancel, ["GẮN", "HỦY"]) != MessageBoxResult.OK) return;
         PdvtProgress.LinkExtra(_records, extra.ExtraKey, target.Id);
         _service.Save(_main.SelectedDocument.Id, _records);
         SyncDraftLinks();
@@ -939,7 +974,7 @@ public partial class PdvtViewModel : ObservableObject
     {
         if (_main.SelectedDocument == null || item is not { HasLinkedExtra: true }) return;
         if (Ask($"Tách các lần trình dạng phát sinh khỏi dòng {item.LinkLabel}?\nChúng sẽ quay lại nhóm \"Phát sinh ngoài BoQ\".",
-                "Tách vật tư phát sinh", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+                "Tách vật tư phát sinh", MessageBoxButton.OKCancel, ["TÁCH", "HỦY"]) != MessageBoxResult.OK) return;
         PdvtProgress.UnlinkExtras(_records, item.Id);
         _service.Save(_main.SelectedDocument.Id, _records);
         SyncDraftLinks();
@@ -981,7 +1016,11 @@ public partial class PdvtViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Save() => SaveDraft(openExcel: false);
+    private void Save()
+    {
+        if (!HasDraft) { ShowToast("Chưa mở phiếu nào để lưu.", isError: true); return; }
+        SaveDraft(openExcel: false);
+    }
 
     /// <summary>Saves, regenerates the Excel sheet and opens it.</summary>
     [RelayCommand]
@@ -992,8 +1031,8 @@ public partial class PdvtViewModel : ObservableObject
     {
         if (!HasDraft || IsLocked) return;
         if (DraftMaterials.Count == 0) { ShowToast("Phiếu chưa có vật tư nào.", isError: true); return; }
-        var confirm = Ask($"Trình {DraftNumber} với {DraftMaterials.Count} vật tư?\nSau khi trình, nội dung phiếu sẽ được khóa; bạn chỉ ghi nhận kết quả duyệt.",
-            "Trình duyệt PDVT", MessageBoxButton.OKCancel);
+        var confirm = Ask($"Trình {DraftNumber} với {DraftMaterials.Count} vật tư?\nSau khi trình, phiếu chuyển sang bước Chờ kết quả: nội dung được khóa, bạn chọn Duyệt / Yêu cầu sửa / Không duyệt cho từng vật tư khi TVGS phản hồi.",
+            "Trình duyệt PDVT", MessageBoxButton.OKCancel, ["TRÌNH DUYỆT", "HỦY"]);
         if (confirm != MessageBoxResult.OK) return;
         DraftSubmittedDate = DateTime.Today;
         foreach (var row in DraftMaterials.Where(x => x.Status == PdvtApprovalStatus.ChuaTrinh)) row.Status = PdvtApprovalStatus.DaTrinh;
@@ -1010,7 +1049,7 @@ public partial class PdvtViewModel : ObservableObject
         var message = withResults > 0
             ? $"Đưa {DraftNumber} về Nháp? Kết quả đã ghi của {withResults} vật tư sẽ bị xóa."
             : $"Đưa {DraftNumber} về Nháp để sửa nội dung?";
-        if (Ask(message, "Hủy trình", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+        if (Ask(message, "Hủy trình", MessageBoxButton.OKCancel, ["ĐƯA VỀ NHÁP", "HỦY"]) != MessageBoxResult.OK) return;
         DraftSubmittedDate = null;
         foreach (var row in DraftMaterials) { row.Status = PdvtApprovalStatus.ChuaTrinh; row.ApprovedDate = null; }
         SaveDraft(openExcel: false, quiet: true);
@@ -1077,7 +1116,7 @@ public partial class PdvtViewModel : ObservableObject
             return;
         }
         var target = _editingRecord;
-        var confirm = Ask($"Xóa phiếu {target.Number}? File Excel đã xuất (nếu có) vẫn giữ nguyên.", "Xóa phiếu PDVT", MessageBoxButton.YesNo);
+        var confirm = Ask($"Xóa phiếu {target.Number}? File Excel đã xuất (nếu có) vẫn giữ nguyên.", "Xóa phiếu PDVT", MessageBoxButton.YesNo, ["XÓA", "KHÔNG"]);
         if (confirm != MessageBoxResult.Yes) return;
         _records.Remove(target);
         foreach (var child in _records.Where(x => x.PreviousRecordId == target.Id)) child.PreviousRecordId = string.Empty;
@@ -1109,6 +1148,23 @@ public partial class PdvtViewModel : ObservableObject
 
     [RelayCommand]
     private void BulkClear() => SetCheckedStatus(PdvtApprovalStatus.DaTrinh);
+
+    [RelayCommand]
+    private void ApproveRow(PdvtMaterialRow? row) => SetRowStatus(row, PdvtApprovalStatus.DaDuyet);
+
+    [RelayCommand]
+    private void ReworkRow(PdvtMaterialRow? row) => SetRowStatus(row, PdvtApprovalStatus.YeuCauSua);
+
+    [RelayCommand]
+    private void RejectRow(PdvtMaterialRow? row) => SetRowStatus(row, PdvtApprovalStatus.KhongDuyet);
+
+    /// <summary>One-click result for a row; clicking the active result again clears it.</summary>
+    private void SetRowStatus(PdvtMaterialRow? row, PdvtApprovalStatus status)
+    {
+        if (row == null || !IsLocked) return;
+        row.Status = row.Status == status ? PdvtApprovalStatus.DaTrinh : status;
+        if (ShowOnlyPending) RefreshDraftView();
+    }
 
     private void SetCheckedStatus(PdvtApprovalStatus status)
     {
@@ -1270,7 +1326,9 @@ public partial class PdvtViewModel : ObservableObject
         NhanHieuPheDuyet = row.NhanHieuPheDuyet, Model = row.Model, DonViTinh = row.DonViTinh,
         DonGia = row.DonGia, KhoiLuong = row.KhoiLuong, Status = row.Status,
         ApprovalRound = row.ApprovalRound, ApprovedDate = row.ApprovedDate, Note = row.Note, ReviewNote = row.ReviewNote,
-        NhanHieuOptions = row.NhanHieuOptions.ToList()
+        NhanHieuOptions = row.NhanHieuOptions.ToList(),
+        SttBoq = row.SttBoq,
+        Sections = row.Sections.ToList()
     };
 
     /// <summary>Sorts "PDVT 10" after "PDVT 9".</summary>

@@ -123,7 +123,7 @@ public sealed class PdvtService
     public static readonly IReadOnlyDictionary<string, Func<PdvtMaterialRow, int, object>> RowPlaceholders =
         new Dictionary<string, Func<PdvtMaterialRow, int, object>>(StringComparer.Ordinal)
         {
-            ["{STT}"] = (_, index) => index + 1,
+            ["{STT}"] = SttValue,
             ["{NoiDungHD}"] = (m, _) => m.NoiDungTheoHd,
             ["{ModelThongSoHD}"] = (m, _) => JoinLines(m.ModelTheoHd, m.ThongSoTheoHd),
             ["{ModelHD}"] = (m, _) => m.ModelTheoHd,
@@ -153,9 +153,42 @@ public sealed class PdvtService
         sheet.CellsUsed(c => !c.HasFormula && RowPlaceholders.Keys.Any(key => c.GetString().Contains(key, StringComparison.Ordinal)))
             .Select(c => c.Address.RowNumber).DefaultIfEmpty(0).Min();
 
+    /// <summary>One output row: a BoQ heading, or a material with its STT counter inside its section.</summary>
+    public sealed record PdvtSheetLine(PdvtSectionRef? Heading, PdvtMaterialRow? Material, int Index);
+
+    /// <summary>
+    /// Materials in sheet order, each preceded by the BoQ headings that changed since the previous material, so the
+    /// reader sees which section ("III. Bơm chữa cháy các loại") a line belongs to.
+    /// </summary>
+    public static List<PdvtSheetLine> BuildSheetLines(IReadOnlyList<PdvtMaterialRow> materials)
+    {
+        var lines = new List<PdvtSheetLine>();
+        var grouped = materials.Any(m => m.Sections.Count > 0);
+        List<PdvtSectionRef> previous = [];
+        var counter = 0;
+        foreach (var material in materials)
+        {
+            List<PdvtSectionRef> sections = material.Sections.Count > 0 || !grouped ? material.Sections
+                : [new PdvtSectionRef(string.Empty, material.IsExtra ? "Phát sinh ngoài BoQ" : "Vật tư theo BoQ")];
+            var same = 0;
+            while (same < sections.Count && same < previous.Count && sections[same] == previous[same]) same++;
+            if (same < sections.Count || sections.Count != previous.Count) counter = 0;
+            for (var level = same; level < sections.Count; level++) lines.Add(new PdvtSheetLine(sections[level], null, 0));
+            previous = sections;
+            lines.Add(new PdvtSheetLine(null, material, ++counter));
+        }
+        return lines;
+    }
+
+    /// <summary>BoQ STT when the line came from the BoQ, otherwise the running number inside its section.</summary>
+    private static object SttValue(PdvtMaterialRow material, int index) =>
+        string.IsNullOrWhiteSpace(material.SttBoq) ? index
+        : int.TryParse(material.SttBoq, out var number) ? number : material.SttBoq;
+
     private static void WriteTemplateRows(IXLWorksheet sheet, int templateRow, IReadOnlyList<PdvtMaterialRow> materials)
     {
         if (materials.Count == 0) { sheet.Row(templateRow).Delete(); return; }
+        var lines = BuildSheetLines(materials);
         // Columns of the template row, captured before rows are inserted.
         var lastColumn = Math.Max(sheet.Row(templateRow).LastCellUsed()?.Address.ColumnNumber ?? 1,
                                   sheet.LastColumnUsed()?.ColumnNumber() ?? 1);
@@ -163,19 +196,28 @@ public sealed class PdvtService
             .Select(column => (Column: column, Text: sheet.Cell(templateRow, column).HasFormula ? string.Empty : sheet.Cell(templateRow, column).GetString()))
             .Where(x => x.Text.Contains('{'))
             .ToList();
-        if (materials.Count > 1) sheet.Row(templateRow).InsertRowsBelow(materials.Count - 1);
+        var templateHeight = sheet.Row(templateRow).Height;
+        var templateBold = Enumerable.Range(1, lastColumn).Select(c => sheet.Cell(templateRow, c).Style.Font.Bold).ToArray();
+        if (lines.Count > 1) sheet.Row(templateRow).InsertRowsBelow(lines.Count - 1);
 
-        for (var index = 0; index < materials.Count; index++)
+        // Bottom-up: the template row is copied while still untouched (a heading written to it first would make every copy bold).
+        for (var index = lines.Count - 1; index >= 0; index--)
         {
             var rowNumber = templateRow + index;
             if (index > 0) sheet.Row(templateRow).CopyTo(sheet.Row(rowNumber));
-            var material = materials[index];
+            var line = lines[index];
+            if (line.Heading is { } heading)
+            {
+                WriteHeadingRow(sheet, rowNumber, lastColumn, templates, heading);
+                continue;
+            }
+            var material = line.Material!;
             foreach (var (column, text) in templates)
             {
                 var cell = sheet.Cell(rowNumber, column);
                 var whole = text.Trim();
                 // A cell holding just one numeric placeholder keeps a real number so Excel formulas can use it.
-                if (RowPlaceholders.TryGetValue(whole, out var single) && single(material, index) is var value and (int or decimal))
+                if (RowPlaceholders.TryGetValue(whole, out var single) && single(material, line.Index) is var value and (int or decimal))
                 {
                     cell.Value = value is int i ? i : (decimal)value;
                     continue;
@@ -183,12 +225,28 @@ public sealed class PdvtService
                 var result = text;
                 foreach (var (key, getter) in RowPlaceholders)
                     if (result.Contains(key, StringComparison.Ordinal))
-                        result = result.Replace(key, FormatValue(getter(material, index)), StringComparison.Ordinal);
+                        result = result.Replace(key, FormatValue(getter(material, line.Index)), StringComparison.Ordinal);
                 cell.Value = result;
             }
-            sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber, lastColumn, sheet.Row(templateRow).Height);
+            sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber, lastColumn, templateHeight);
         }
-        ExpandTemplateRanges(sheet, templateRow, templateRow + materials.Count - 1);
+        ExpandTemplateRanges(sheet, templateRow, templateRow + lines.Count - 1);
+        // Font weight last, once every row exists: copies made from the template row otherwise pick up a heading's bold.
+        for (var index = 0; index < lines.Count; index++)
+            for (var c = 1; c <= lastColumn; c++)
+                sheet.Cell(templateRow + index, c).Style.Font.Bold = lines[index].Heading != null || templateBold[c - 1];
+    }
+
+    /// <summary>Heading code goes where {STT} is, its name where the content placeholders are; other cells stay empty.</summary>
+    private static void WriteHeadingRow(IXLWorksheet sheet, int rowNumber, int lastColumn, List<(int Column, string Text)> templates, PdvtSectionRef heading)
+    {
+        foreach (var (column, text) in templates)
+        {
+            sheet.Cell(rowNumber, column).Value = text.Contains("{STT}", StringComparison.Ordinal) ? heading.Code
+                : text.Contains("{NoiDungHD}", StringComparison.Ordinal) || text.Contains("{NoiDung}", StringComparison.Ordinal) ? heading.Name
+                : string.Empty;
+        }
+        sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber, lastColumn, 0);
     }
 
     /// <summary>
@@ -216,15 +274,33 @@ public sealed class PdvtService
     /// <summary>Layout of templates without row placeholders: row 15, columns A–J.</summary>
     private static void WriteFixedLayout(IXLWorksheet sheet, IReadOnlyList<PdvtMaterialRow> materials)
     {
-        var materialCount = materials.Count;
-        if (materialCount == 0) sheet.Row(15).Delete();
-        else if (materialCount > 1) sheet.Row(16).InsertRowsAbove(materialCount - 1);
-        for (var index = 0; index < materialCount; index++)
+        if (materials.Count == 0) { sheet.Row(15).Delete(); return; }
+        var lines = BuildSheetLines(materials);
+        if (lines.Count > 1) sheet.Row(16).InsertRowsAbove(lines.Count - 1);
+        for (var index = lines.Count - 1; index >= 0; index--)
         {
             var rowNumber = 15 + index;
             if (index > 0) sheet.Row(15).CopyTo(sheet.Row(rowNumber));
-            var material = materials[index];
-            sheet.Cell(rowNumber, 1).Value = index + 1;
+            for (var col = 1; col <= 10; col++)
+            {
+                sheet.Cell(rowNumber, col).Style.Alignment.WrapText = true;
+                sheet.Cell(rowNumber, col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            }
+            var line = lines[index];
+            if (line.Heading is { } heading)
+            {
+                sheet.Cell(rowNumber, 1).Value = heading.Code;
+                sheet.Cell(rowNumber, 2).Value = heading.Name;
+                sheet.Cell(rowNumber, 6).Value = heading.Name;
+                sheet.Range(rowNumber, 1, rowNumber, 10).Style.Font.Bold = true;
+                sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber, 10, 0);
+                continue;
+            }
+            var material = line.Material!;
+            sheet.Range(rowNumber, 1, rowNumber, 10).Style.Font.Bold = false;
+            var stt = SttValue(material, line.Index);
+            if (stt is int number) sheet.Cell(rowNumber, 1).Value = number;
+            else sheet.Cell(rowNumber, 1).Value = stt.ToString();
             sheet.Cell(rowNumber, 2).Value = material.NoiDungTheoHd;
             sheet.Cell(rowNumber, 3).Value = JoinLines(material.ModelTheoHd, material.ThongSoTheoHd);
             sheet.Cell(rowNumber, 4).Value = material.NhanHieuTheoHd;
@@ -234,12 +310,6 @@ public sealed class PdvtService
             sheet.Cell(rowNumber, 8).Value = material.NhanHieuPheDuyet;
             sheet.Cell(rowNumber, 9).Value = material.XuatXuDeTrinh;
             sheet.Cell(rowNumber, 10).Value = material.Note;
-
-            for (var col = 1; col <= 10; col++)
-            {
-                sheet.Cell(rowNumber, col).Style.Alignment.WrapText = true;
-                sheet.Cell(rowNumber, col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            }
             sheet.Row(rowNumber).Height = CalculateAutoRowHeight(sheet, rowNumber, 10, 26);
         }
     }

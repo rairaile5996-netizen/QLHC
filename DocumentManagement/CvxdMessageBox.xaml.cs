@@ -14,11 +14,16 @@ namespace DocumentManagement
             Utilities.AppThemeResources.Apply(Resources, Utilities.AppThemeResources.LoadSavedIsDarkTheme());
         }
 
-        public static MessageBoxResult Show(string title, string message, MessageBoxButton buttons = MessageBoxButton.OK, MessageBoxImage icon = MessageBoxImage.Information)
+        public static MessageBoxResult Show(string title, string message, MessageBoxButton buttons = MessageBoxButton.OK, MessageBoxImage icon = MessageBoxImage.Information,
+            string? yesText = null, string? noText = null, string? okText = null, string? cancelText = null)
         {
             var dialog = new CvxdMessageBox();
             dialog.TxtTitle.Text = title;
             dialog.TxtMessage.Text = message;
+            if (yesText != null) dialog.BtnYes.Content = yesText;
+            if (noText != null) dialog.BtnNo.Content = noText;
+            if (okText != null) dialog.BtnOk.Content = okText;
+            if (cancelText != null) dialog.BtnCancel.Content = cancelText;
 
             // Set Icon
             switch (icon)
